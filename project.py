@@ -555,6 +555,26 @@ crime_data['STREET'] = crime_data['STREET'].astype('string')
 print(crime_data['STREET'].dtype)
 
 # %%
+# 14) Analyzing `STREET` Column
+# First, determine the number of unique values present in this column
+unique_street = crime_data['STREET'].value_counts()
+num_unique_street = crime_data['STREET'].nunique()
+print(unique_street)
+print(num_unique_street)
+
+# %%
+# Sanity check
+crime_data['STREET'].info()
+crime_data['STREET'].describe()
+
+#%% Convert the data type to 'STRING'
+crime_data['STREET'] = crime_data['STREET'].astype('string')
+
+#%%
+# Verify the change
+print(crime_data['STREET'].dtype)
+
+# %%
 # Next, check for any missing values in 'STREET' column
 num_missing_STREET = crime_data['STREET'].isnull().sum()
 print("\nNumber of missing values in STREET: ", num_missing_STREET)
