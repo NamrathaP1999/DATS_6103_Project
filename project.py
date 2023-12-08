@@ -502,6 +502,12 @@ def impute_ucr_part_subset(data, subset):
         if offense_code_group in ucr_part_mapping:
             data.at[index, 'UCR_PART'] = ucr_part_mapping[offense_code_group]
 
+    # Impute missing UCR_PART values in the subset
+    for index in indices_to_impute:
+        offense_code_group = data.at[index, 'OFFENSE_CODE_GROUP']
+        if offense_code_group in ucr_part_mapping:
+            data.at[index, 'UCR_PART'] = ucr_part_mapping[offense_code_group]
+
 # Call the function
 impute_ucr_part_subset(crime_data, offense_code_for_missing_UCR_PART)
 
