@@ -573,6 +573,19 @@ print(num_unique_street)
 crime_data['STREET'].info()
 crime_data['STREET'].describe()
 
+# %%
+# 14) Analyzing `STREET` Column
+# First, determine the number of unique values present in this column
+unique_street = crime_data['STREET'].value_counts()
+num_unique_street = crime_data['STREET'].nunique()
+print(unique_street)
+print(num_unique_street)
+
+# %%
+# Sanity check
+crime_data['STREET'].info()
+crime_data['STREET'].describe()
+
 #%% Convert the data type to 'STRING'
 crime_data['STREET'] = crime_data['STREET'].astype('string')
 
