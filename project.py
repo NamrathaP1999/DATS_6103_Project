@@ -65,10 +65,6 @@ print("\nTotal Number of Unique Values in the Incident Number column: ", number_
 # Group by 'INCIDENT_NUMBER'
 grouped = crime_data.groupby('INCIDENT_NUMBER')
 
-#%%
-# Verifying the presence of duplicate rows i.e. to check whether single incident is reported multiple times
-# Group by 'INCIDENT_NUMBER'
-grouped = crime_data.groupby('INCIDENT_NUMBER')
 
 # Initialize a counter for incidents with multiple distinct entries
 multiple_entries_count = 0
