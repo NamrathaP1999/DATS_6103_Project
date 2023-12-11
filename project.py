@@ -582,5 +582,11 @@ print("\nNumber of missing values in STREET: ", num_missing_STREET)
 # There are no missing values present in the 'STREET' column of the dataset.
 # Additionally, the data type of the 'STREET' column is appropriately set as a string, which is ideal for textual street name data.
 
+#%%
+# Export the dataframe to a CSV file
+crime_data.to_csv('final_crime_data.csv', index = False)
+
 
 # II) Exploratory Data Analysis 
+
+# %%
