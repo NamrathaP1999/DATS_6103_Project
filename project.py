@@ -41,8 +41,6 @@ crime_data.describe()
 # User-defined functions will be utilized in this process to streamline the data cleaning and
 # type conversion tasks, enhancing the dataset's readiness for subsequent analysis.
 
-
-#%%
 #%%
 # 1) Analyzing `INCIDENT_NUMBER` column
 # Verifying the Uniqueness of the 'INCIDENT_NUMBER' Column
@@ -64,7 +62,6 @@ print("\nTotal Number of Unique Values in the Incident Number column: ", number_
 # Verifying the presence of duplicate rows i.e. to check whether single incident is reported multiple times
 # Group by 'INCIDENT_NUMBER'
 grouped = crime_data.groupby('INCIDENT_NUMBER')
-
 
 # Initialize a counter for incidents with multiple distinct entries
 multiple_entries_count = 0
@@ -118,7 +115,7 @@ num_missing_code = crime_data['OFFENSE_CODE'].isnull().sum()
 print("\nNumber of missing values in OFFENSE_CODE: ", num_missing_code)
 
 # The analysis shows there are no missing values in 'OFFENSE_CODE'
-# However, the data type of this column is currently 'object', which may not be optimal
+# However, the data type of this column is currently 'int64', which may not be optimal
 # Converting 'OFFENSE_CODE' to a 'categorical' data type can be beneficial because
 # categorical treatment allows for easy grouping and analysis of different crime types without implying any numerical relationship between them.
 
@@ -142,6 +139,7 @@ print(number_of_unique_code_group)
 num_missing_code_group = crime_data['OFFENSE_CODE_GROUP'].isnull().sum()
 print("\nNumber of missing values in OFFENSE_CODE: ", num_missing_code_group)
 
+#%%
 # It is observed that the 'OFFENSE_CODE_GROUP' column contains no missing values,
 # which is beneficial for a complete analysis. However, its current data type is 'object'.
 # For improved clarity and consistency in data handling, it would be advantageous to convert this column to 'string' type.
@@ -164,6 +162,7 @@ print(number_unique_description)
 num_missing_description = crime_data['OFFENSE_CODE_GROUP'].isnull().sum()
 print("\nNumber of missing values in OFFENSE_CODE: ", num_missing_description)
 
+#%%
 # It is observed that the 'OFFENSE_DESCRIPTION' column contains no missing values,
 # However, its current data type is 'object'.
 # For improved clarity and consistency in data handling, it would be advantageous to convert this column to 'string' type.
@@ -206,12 +205,15 @@ crime_data['DISTRICT'] = crime_data.apply(
 num_missing_districts = crime_data['DISTRICT'].isnull().sum()
 print("\nNumber of missing values in DISTRICT: ", num_missing_districts)
 
+#%%
 # It is observed that the 'DISTRICT' column contains no missing values now,
 # However, its current data type is 'object'.
 # For improved clarity and consistency in data handling, it would be advantageous to convert this column to 'string' type.
 # Convert 'DISTRICT' column to string data type
-#%%
 crime_data['DISTRICT'] = crime_data['DISTRICT'].astype('string')
+
+# Verify the conversion
+print(crime_data['DISTRICT'].dtype)
 
 #%%
 # Updating District Codes with Real-Time District Names
@@ -295,6 +297,7 @@ crime_data['SHOOTING'] = crime_data['SHOOTING'].astype('category')
 # Verify the conversion
 print(crime_data['SHOOTING'].unique())
 print(crime_data['SHOOTING'].dtype)
+print(crime_data['SHOOTING'].value_counts())
 
 #%% 
 # Next, check for any missing values in 'SHOOTING' column
@@ -344,7 +347,7 @@ print(crime_data['YEAR'].dtype)
 # Convert 'YEAR' column to a categorical data type
 crime_data['YEAR'] = crime_data['YEAR'].astype('category')
 
-# Optionally, to verify the conversion, you can check the data type again
+# Verify the conversion
 print(crime_data['YEAR'].dtype)
 
 # Status of the 'YEAR' Column
@@ -389,7 +392,7 @@ print(num_unique_day)
 crime_data['DAY_OF_WEEK'].info()
 crime_data['DAY_OF_WEEK'].describe()
 
-# %%
+#%%
 # Next, check for any missing values in 'DAY_OF_WEEK' column
 num_missing_day = crime_data['DAY_OF_WEEK'].isnull().sum()
 print("\nNumber of missing values in DAY_OF_WEEK: ", num_missing_day)
@@ -401,6 +404,7 @@ print("\nNumber of missing values in DAY_OF_WEEK: ", num_missing_day)
 # It clearly defines the column as containing a limited and fixed set of values (the days of the week),
 # which is semantically more appropriate for a categorical variable.
 # This conversion is expected to facilitate more efficient and effective data analysis involving days of the week.
+
 #%%
 crime_data['DAY_OF_WEEK'] = crime_data['DAY_OF_WEEK'].astype('category')
 
@@ -408,8 +412,8 @@ crime_data['DAY_OF_WEEK'] = crime_data['DAY_OF_WEEK'].astype('category')
 print(crime_data['DAY_OF_WEEK'].dtype)
 
 # Status of the 'DAY_OF_WEEK' Column
-# The 'MONTH' column in the dataset is complete with no missing values.
-# Additionally, the current data type of the 'MONTH' column is appropriate for the type of data it represents,
+# The 'DAY_OF_WEEK' column in the dataset is complete with no missing values.
+# Additionally, the current data type of the 'DAY_OF_WEEK' column is appropriate for the type of data it represents,
 
 # %%
 # 12) Analyzing `HOUR` Column
@@ -509,12 +513,6 @@ impute_ucr_part_subset(crime_data, offense_code_for_missing_UCR_PART)
 # Check the results for the imputed subset
 print(crime_data.loc[offense_code_for_missing_UCR_PART.index][['OFFENSE_CODE_GROUP', 'UCR_PART']])
 
-# Call the function
-impute_ucr_part_subset(crime_data, offense_code_for_missing_UCR_PART)
-
-# Check the results for the imputed subset
-print(crime_data.loc[offense_code_for_missing_UCR_PART.index][['OFFENSE_CODE_GROUP', 'UCR_PART']])
-
 #%% 
 # Verify the change
 unique_UCR_PART = crime_data['UCR_PART'].value_counts()
@@ -525,12 +523,10 @@ print(num_unique_UCR_PART)
 num_missing_UCR_PART = crime_data['UCR_PART'].isnull().sum()
 print("\nNumber of missing values in UCR_PART: ", num_missing_UCR_PART)
 
-
 # %%
 # Converting 'UCR_PART' Column to Categorical Type
 # because it simplifies operations like sorting, grouping, and filtering, based on UCR_PART, making them faster and more intuitive.
 # Change the data type 
-#%%
 crime_data['UCR_PART'] = crime_data['UCR_PART'].astype('category')
 
 #%%
@@ -540,39 +536,6 @@ print(crime_data['UCR_PART'].dtype)
 # Status of the 'UCR_PART' Column
 # The 'UCR_PART' column in the dataset currently has no missing values.
 # Additionally, the data type of this column is appropriate for the kind of information it represents.
-
-# %%
-# 14) Analyzing `STREET` Column
-# First, determine the number of unique values present in this column
-unique_street = crime_data['STREET'].value_counts()
-num_unique_street = crime_data['STREET'].nunique()
-print(unique_street)
-print(num_unique_street)
-
-# %%
-# Sanity check
-crime_data['STREET'].info()
-crime_data['STREET'].describe()
-
-#%% Convert the data type to 'STRING'
-crime_data['STREET'] = crime_data['STREET'].astype('string')
-
-#%%
-# Verify the change
-print(crime_data['STREET'].dtype)
-
-# %%
-# 14) Analyzing `STREET` Column
-# First, determine the number of unique values present in this column
-unique_street = crime_data['STREET'].value_counts()
-num_unique_street = crime_data['STREET'].nunique()
-print(unique_street)
-print(num_unique_street)
-
-# %%
-# Sanity check
-crime_data['STREET'].info()
-crime_data['STREET'].describe()
 
 # %%
 # 14) Analyzing `STREET` Column
@@ -614,7 +577,6 @@ crime_data['STREET'].fillna('Not Specified', inplace=True)
 print(crime_data['STREET'].value_counts())
 num_missing_STREET = crime_data['STREET'].isnull().sum()
 print("\nNumber of missing values in STREET: ", num_missing_STREET)
-
 
 # State of the 'STREET' Column
 # There are no missing values present in the 'STREET' column of the dataset.
