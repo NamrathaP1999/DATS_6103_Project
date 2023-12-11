@@ -614,6 +614,12 @@ print(crime_data['STREET'].value_counts())
 num_missing_STREET = crime_data['STREET'].isnull().sum()
 print("\nNumber of missing values in STREET: ", num_missing_STREET)
 
+#%%
+# Verify the operation
+print(crime_data['STREET'].value_counts())
+num_missing_STREET = crime_data['STREET'].isnull().sum()
+print("\nNumber of missing values in STREET: ", num_missing_STREET)
+
 # State of the 'STREET' Column
 # There are no missing values present in the 'STREET' column of the dataset.
 # Additionally, the data type of the 'STREET' column is appropriately set as a string, which is ideal for textual street name data.
