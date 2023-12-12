@@ -766,6 +766,107 @@ plt.title('Receiver Operating Characteristic')
 plt.legend(loc="lower right")
 plt.show()
 
+# III) KNN model
+
+# %%
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.preprocessing import StandardScaler, OneHotEncoder
+from sklearn.metrics import classification_report, confusion_matrix, roc_auc_score, roc_curve
+from sklearn.compose import ColumnTransformer
+from sklearn.pipeline import Pipeline
+from sklearn.model_selection import cross_val_score
+import matplotlib.pyplot as plt
+
+# Load the balanced_dataset
+crime_data = pd.read_csv('Balanced_data.csv')
+
+# Selecting features and target variable
+X = crime_data.drop(['OFFENSE_CODE', 'INCIDENT_NUMBER', 'OCCURRED_ON_DATE', 'SHOOTING'], axis=1)
+y = crime_data['SHOOTING'].apply(lambda x: 1 if x == 'Y' else 0)
+
+# Handling categorical variables
+categorical_features = ['OFFENSE_CODE_GROUP', 'DISTRICT', 'YEAR', 'DAY_OF_WEEK', 'UCR_PART', 'STREET']
+numerical_features = ['MONTH', 'HOUR']
+
+# Create a column transformer for preprocessing
+preprocessor = ColumnTransformer(
+    transformers=[
+        ('num', StandardScaler(), numerical_features),
+        ('cat', OneHotEncoder(handle_unknown='ignore'), categorical_features)
+    ]
+)
+
+# Create a pipeline that combines the preprocessor with a KNN classifier
+# Note: Do not set n_neighbors here since we will determine the best k later
+pipeline = Pipeline(steps=[('preprocessor', preprocessor),
+                           ('classifier', KNeighborsClassifier())])
+
+# Split the data into training and test sets
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
+
+# %%
+# List to hold the average CV scores
+cv_scores = []
+
+# List to hold the values of k
+k_values = list(range(1, 31))  # Testing k from 1 to 30
+
+# Perform 10-fold cross-validation with each value of k
+for k in k_values:
+    # Update the classifier's n_neighbors parameter
+    pipeline.set_params(classifier__n_neighbors=k)
+    scores = cross_val_score(pipeline, X_train, y_train, cv=10, scoring='f1')
+    cv_scores.append(scores.mean())
+
+# %%
+# Plot F1 score vs k
+plt.figure(figsize=(12, 6))
+plt.plot(k_values, cv_scores, marker='o')
+plt.xlabel('Value of k for KNN')
+plt.ylabel('Cross-Validated F1 Score')
+plt.title('KNN Cross-Validated F1 Score for Different k Values')
+plt.show()
+
+# %%
+# Select the best k
+best_k = k_values[cv_scores.index(max(cv_scores))]
+print(f'The best value of k is {best_k}')
+
+# %%
+# Update the pipeline with the best k found
+pipeline.set_params(classifier__n_neighbors=best_k)
+
+# Fit the model with the training set
+pipeline.fit(X_train, y_train)
+
+# Predictions
+y_pred_knn = pipeline.predict(X_test)
+y_pred_proba_knn = pipeline.predict_proba(X_test)[:, 1]
+
+# %%
+# Evaluation
+print("KNN Classification Report:\n", classification_report(y_test, y_pred_knn))
+print("KNN Confusion Matrix:\n", confusion_matrix(y_test, y_pred_knn))
+print("KNN ROC AUC Score:", roc_auc_score(y_test, y_pred_proba_knn))
+
+# %%
+# ROC Curve for KNN
+fpr_knn, tpr_knn, thresholds_knn = roc_curve(y_test, y_pred_proba_knn)
+plt.figure()
+plt.plot(fpr_knn, tpr_knn, label='KNN (area = %0.2f)' % roc_auc_score(y_test, y_pred_proba_knn))
+plt.plot([0, 1], [0, 1], 'r--')
+plt.xlim([0.0, 1.0])
+plt.ylim([0.0, 1.05])
+plt.xlabel('False Positive Rate')
+plt.ylabel('True Positive Rate')
+plt.title('Receiver Operating Characteristic for KNN')
+plt.legend(loc="lower right")
+plt.show()
+
+
+# IV) K means clustering
 # %%
 import pandas as pd
 from sklearn.preprocessing import StandardScaler
@@ -806,26 +907,32 @@ plt.legend()
 plt.show()
 
 # %%
-import pandas as pd
+from sklearn.preprocessing import LabelEncoder
 from sklearn.cluster import KMeans
 import matplotlib.pyplot as plt
 
 # Load data
-crime_data = pd.read_csv('Balanced_data.csv')
+crime_data = pd.read_csv('final_crime_data.csv')
 
-# Selecting features for clustering
-X = crime_data[['HOUR', 'MONTH']]
+# Encode the categorical data
+le_offense = LabelEncoder()
+le_district = LabelEncoder()
 
-# Calculate WCSS for different numbers of clusters
+crime_data['OFFENSE_CODE_GROUP'] = le_offense.fit_transform(crime_data['OFFENSE_CODE_GROUP'])
+crime_data['DISTRICT'] = le_district.fit_transform(crime_data['DISTRICT'])
+
+# Now select your features for clustering
+X = crime_data[['OFFENSE_CODE_GROUP', 'DISTRICT']]
+
+# Perform KMeans clustering (now X is all numeric)
 wcss = []
-for i in range(1, 11):  # Testing 1 to 10 clusters
+for i in range(1, 11):
     kmeans = KMeans(n_clusters=i, init='k-means++', n_init=10, random_state=42)
     kmeans.fit(X)
     wcss.append(kmeans.inertia_)
 
 #%%
-# Plot the WCSS to see the elbow
-plt.figure(figsize=(8, 6))
+# Plot the WCSS to find the elbow
 plt.plot(range(1, 11), wcss)
 plt.title('Elbow Method')
 plt.xlabel('Number of clusters')
@@ -833,8 +940,8 @@ plt.ylabel('WCSS')
 plt.show()
 
 # %%
-# KMeans clustering
-k = 5  
+# Choose the number of clusters you decided upon (say 3 from the elbow method)
+k = 3 
 kmeans = KMeans(n_clusters=k, init='k-means++', n_init=10, random_state=42)
 y_kmeans = kmeans.fit_predict(X)
 
@@ -842,10 +949,148 @@ y_kmeans = kmeans.fit_predict(X)
 # Plotting the clusters
 plt.figure(figsize=(8, 6))
 for i in range(k):
-    plt.scatter(X[y_kmeans == i]['HOUR'], X[y_kmeans == i]['MONTH'], label=f'Cluster {i}')
-plt.title('Clusters of Crimes by Hour and Month')
-plt.xlabel('Hour of Day')
-plt.ylabel('Month of Year')
+    plt.scatter(X[y_kmeans == i]['OFFENSE_CODE_GROUP'], X[y_kmeans == i]['DISTRICT'], label=f'Cluster {i}')
+plt.title('Clusters of Crimes by Offense Code Group and District')
+plt.xlabel('Encoded Offense Code Group')
+plt.ylabel('Encoded District')
 plt.legend()
 plt.show()
+
+# %%
+import pandas as pd
+from sklearn.cluster import KMeans
+from sklearn.preprocessing import StandardScaler
+import matplotlib.pyplot as plt
+
+# Load data
+crime_data = pd.read_csv('final_crime_data.csv')
+
+# Map 'DAY_OF_WEEK' to numerical values
+days = {'Monday': 1, 'Tuesday': 2, 'Wednesday': 3, 'Thursday': 4, 'Friday': 5, 'Saturday': 6, 'Sunday': 7}
+crime_data['DAY_OF_WEEK'] = crime_data['DAY_OF_WEEK'].map(days)
+
+# Extract the relevant features for clustering
+X = crime_data[['DAY_OF_WEEK', 'HOUR']]
+
+# Scale 'HOUR' feature
+scaler = StandardScaler()
+X['HOUR'] = scaler.fit_transform(X[['HOUR']])
+
+# Determine the number of clusters using the Elbow Method
+wcss = []
+for i in range(1, 11):  # Let's test for 1 to 10 clusters
+    kmeans = KMeans(n_clusters=i, init='k-means++', n_init=10, random_state=42)
+    kmeans.fit(X)
+    wcss.append(kmeans.inertia_)
+
+# Plot the WCSS to find the elbow
+plt.figure(figsize=(8, 6))
+plt.plot(range(1, 11), wcss)
+plt.title('Elbow Method for Optimal k')
+plt.xlabel('Number of clusters')
+plt.ylabel('WCSS')
+plt.show()
+
+#%%
+# Choose the number of clusters (k) based on the Elbow Method
+k = 4  # for example
+kmeans = KMeans(n_clusters=k, init='k-means++', random_state=42)
+y_kmeans = kmeans.fit_predict(X)
+
+# Plotting the clusters
+plt.figure(figsize=(8, 6))
+plt.scatter(X['HOUR'][y_kmeans == 0], X['DAY_OF_WEEK'][y_kmeans == 0], s=50, c='red', label='Cluster 1')
+plt.scatter(X['HOUR'][y_kmeans == 1], X['DAY_OF_WEEK'][y_kmeans == 1], s=50, c='blue', label='Cluster 2')
+plt.scatter(X['HOUR'][y_kmeans == 2], X['DAY_OF_WEEK'][y_kmeans == 2], s=50, c='green', label='Cluster 3')
+plt.title('Clusters of Crimes by Day of Week and Hour')
+plt.xlabel('Scaled Hour of Day')
+plt.ylabel('Day of Week')
+plt.xticks(ticks=range(1, 8), labels=list(days.keys()))  # Set x-ticks to day names
+plt.legend()
+plt.show()
+
+
+# %%
+from sklearn.cluster import KMeans
+import matplotlib.pyplot as plt
+
+# Assuming crime_data is already read and DAY_OF_WEEK is encoded as numeric
+X = crime_data[['DAY_OF_WEEK', 'HOUR']]
+
+# Apply KMeans
+kmeans = KMeans(n_clusters=3, random_state=42)  # Adjust the number of clusters as needed
+clusters = kmeans.fit_predict(X)
+
+# Plotting the clusters
+plt.figure(figsize=(10, 8))
+plt.scatter(X['HOUR'], X['DAY_OF_WEEK'], c=clusters, cmap='viridis', label='Clusters')
+plt.colorbar(ticks=[0, 1, 2], label='Cluster Label')  # Adjust number of ticks based on the number of clusters
+
+# Annotating the plot with day names and hour
+day_ticks = range(1, 8)  # 1 to 7 for Monday to Sunday
+hour_ticks = range(0, 24)  # 0 to 23 for each hour
+plt.xticks(hour_ticks, hour_ticks)  # Set x-ticks to hours
+plt.yticks(day_ticks, ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'])  # Set y-ticks to day names
+
+plt.title('Clusters of Crimes by Day of Week and Hour')
+plt.xlabel('Hour of Day')
+plt.ylabel('Day of Week')
+plt.show()
+
+# %%
+import pandas as pd
+from sklearn.cluster import KMeans
+from sklearn.preprocessing import LabelEncoder, MinMaxScaler
+import matplotlib.pyplot as plt
+
+# Load data
+crime_data = pd.read_csv('final_crime_data.csv')
+
+# Encode 'UCR_PART'
+ucr_encoder = LabelEncoder()
+crime_data['UCR_PART'] = ucr_encoder.fit_transform(crime_data['UCR_PART'])
+
+# Extract the relevant features for clustering
+X = crime_data[['UCR_PART', 'MONTH']]
+
+# Optional: Scale 'MONTH' feature if necessary
+# scaler = MinMaxScaler(feature_range=(1, 12))
+# X['MONTH'] = scaler.fit_transform(X[['MONTH']])
+
+# Determine the number of clusters using the Elbow Method
+wcss = []
+for i in range(1, 11):  # Let's test for 1 to 10 clusters
+    kmeans = KMeans(n_clusters=i, init='k-means++', n_init=10, random_state=42)
+    kmeans.fit(X)
+    wcss.append(kmeans.inertia_)
+
+# Plot the WCSS to find the elbow
+plt.figure(figsize=(8, 6))
+plt.plot(range(1, 11), wcss)
+plt.title('Elbow Method for Optimal k')
+plt.xlabel('Number of clusters')
+plt.ylabel('WCSS')
+plt.show()
+
+#%%
+# Choose the number of clusters (k) based on the Elbow Method
+k = 4  # for example
+kmeans = KMeans(n_clusters=k, init='k-means++', random_state=42)
+y_kmeans = kmeans.fit_predict(X)
+
+# Plotting the clusters
+plt.figure(figsize=(8, 6))
+# Here, we use the original 'MONTH' and 'UCR_PART' for plotting to keep the original data scale
+plt.scatter(crime_data['MONTH'][y_kmeans == 0], crime_data['UCR_PART'][y_kmeans == 0], s=50, c='red', label='Cluster 1')
+plt.scatter(crime_data['MONTH'][y_kmeans == 1], crime_data['UCR_PART'][y_kmeans == 1], s=50, c='blue', label='Cluster 2')
+plt.scatter(crime_data['MONTH'][y_kmeans == 2], crime_data['UCR_PART'][y_kmeans == 2], s=50, c='green', label='Cluster 3')
+plt.scatter(crime_data['MONTH'][y_kmeans == 3], crime_data['UCR_PART'][y_kmeans == 3], s=50, c='purple', label='Cluster 4')
+plt.title('Clusters of Crimes by UCR Part and Month')
+plt.xlabel('Month')
+plt.ylabel('UCR Part')
+plt.xticks(ticks=range(1, 13), labels=range(1, 13))  # Set x-ticks to months
+plt.yticks(ticks=range(len(ucr_encoder.classes_)), labels=ucr_encoder.classes_)  # Set y-ticks to UCR parts
+plt.legend()
+plt.show()
+
 # %%
