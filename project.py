@@ -616,93 +616,221 @@ crime_data = crime_data[['INCIDENT_NUMBER', 'OFFENSE_CODE', 'OFFENSE_CODE_GROUP'
 
 # %%
 # Group by 'DISTRICT' and then sample from each group
-# grouped = crime_data[crime_data['SHOOTING'] == 'N'].groupby('DISTRICT')
-# sampled_non_reported = grouped.apply(lambda x: x.sample(min(len(x), int(10000 * len(x) / len(crime_data)))))
-# sampled_non_reported = sampled_non_reported.reset_index(drop=True)
+grouped = crime_data[crime_data['SHOOTING'] == 'N'].groupby('DISTRICT')
+sampled_non_reported = grouped.apply(lambda x: x.sample(min(len(x), int(10000 * len(x) / len(crime_data)))))
+sampled_non_reported = sampled_non_reported.reset_index(drop=True)
 
-# reported_shootings = crime_data[crime_data['SHOOTING'] == 'Y']
-# balanced_dataset = pd.concat([reported_shootings, sampled_non_reported], ignore_index=True)
+reported_shootings = crime_data[crime_data['SHOOTING'] == 'Y']
+balanced_dataset = pd.concat([reported_shootings, sampled_non_reported], ignore_index=True)
 
-# balanced_dataset = balanced_dataset.sample(frac=1, random_state=42).reset_index(drop=True)
+balanced_dataset = balanced_dataset.sample(frac=1, random_state=42).reset_index(drop=True)
+balanced_dataset.to_csv('Balanced_data.csv', index = False)
 
-#%%
+# After implementing the stratified sampling technique to balance our dataset, particularly focusing on the 'DISTRICT' variable, the resultant dataset was saved as a CSV file. 
+# This step is crucial for ensuring consistency in our modeling process. The reason behind saving the stratified sample to a CSV file stems from the nature of our sampling method: 
+# each execution of the stratified sampling code can potentially yield a slightly different dataset due to the randomness inherent in the sampling process.
+# By saving the stratified dataset as a CSV, we establish a fixed dataset that can be reliably used for all subsequent modeling. 
+# This approach eliminates the variability that would arise from repeatedly running the stratified sampling process, which could lead to different subsets of data and, consequently, different modeling outcomes.
+# Using a fixed CSV file for modeling ensures that our results are reproducible and consistent, a key aspect in the validation of machine learning models.
+# The commented code related to the stratification process serves as a record of the methodology used to obtain the balanced dataset. 
+# However, for the actual modeling, the saved CSV file is used. This practice enhances the reliability of our model by providing a stable and consistent dataset for training and testing, 
+# thereby allowing for a more accurate assessment of the model's performance.
 
 
+# I) Logistic Regression to predict 'SHOOTING'
 
-
-
-
-
-
-
-
-#%%
-from sklearn.linear_model import LogisticRegression
+# %%
+import pandas as pd
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import StandardScaler
-
-# Assuming 'crime_data' is your DataFrame and 'SHOOTING' is the target variable
-X = crime_data.drop('SHOOTING', axis=1)  # Predictor variables
-y = crime_data['SHOOTING']               # Target variable
-
-# Preprocessing: Encoding, Scaling, etc.
-# Example: Standard Scaler for numerical features
-scaler = StandardScaler()
-X_scaled = scaler.fit_transform(X)
-
-# Split the dataset into training and testing sets
-X_train, X_test, y_train, y_test = train_test_split(X_scaled, y, test_size=0.3, random_state=42)
-
-# Fit the logistic regression model
-model = LogisticRegression()
-model.fit(X_train, y_train)
-
-#%%
-# Extracting coefficients
-coefficients = model.coef_[0]
-
-# Create a DataFrame for easier interpretation
-feature_importance = pd.DataFrame({'Feature': X.columns, 'Coefficient': coefficients})
-
-# Sort the features by the absolute value of their coefficients
-feature_importance['Absolute_Coefficient'] = feature_importance['Coefficient'].abs()
-feature_importance = feature_importance.sort_values(by='Absolute_Coefficient', ascending=False)
-
-print(feature_importance)
-
-
-#%%
+from sklearn.linear_model import LogisticRegression
+from sklearn.preprocessing import StandardScaler, OneHotEncoder
+from sklearn.metrics import classification_report, confusion_matrix, roc_auc_score, roc_curve
+from sklearn.compose import ColumnTransformer
+from sklearn.pipeline import Pipeline
 import matplotlib.pyplot as plt
 
-# Selecting top N features for visualization
-top_features = feature_importance.head(10)  # Adjust N as needed
+# Load the balanced_dataset
+crime_data = pd.read_csv('Balanced_data.csv')
 
-plt.figure(figsize=(10, 6))
-plt.barh(top_features['Feature'], top_features['Absolute_Coefficient'])
-plt.xlabel('Absolute Coefficient Value')
-plt.ylabel('Features')
-plt.title('Top Features Predicting Shootings')
-plt.gca().invert_yaxis()  # To display the highest value at the top
+# Selecting features and target variable
+X = crime_data.drop(['INCIDENT_NUMBER', 'OCCURRED_ON_DATE', 'SHOOTING'], axis=1)
+y = crime_data['SHOOTING'].apply(lambda x: 1 if x == 'Y' else 0) 
+
+# Handling categorical variables
+categorical_features = ['OFFENSE_CODE', 'OFFENSE_CODE_GROUP', 'DISTRICT', 'YEAR', 'DAY_OF_WEEK', 'UCR_PART', 'STREET']
+numerical_features = ['MONTH', 'HOUR']
+
+# Create a column transformer for preprocessing
+preprocessor = ColumnTransformer(
+    transformers=[
+        ('num', StandardScaler(), numerical_features),
+        ('cat', OneHotEncoder(handle_unknown='ignore'), categorical_features)  
+    ])
+
+# Create a pipeline that combines the preprocessor with a logistic regression model
+pipeline = Pipeline(steps=[('preprocessor', preprocessor),
+                           ('classifier', LogisticRegression())])
+
+# Split the data into training and test sets
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
+
+# Fit the model
+pipeline.fit(X_train, y_train)
+
+# Predictions
+y_pred = pipeline.predict(X_test)
+y_pred_proba = pipeline.predict_proba(X_test)[:, 1]
+
+#%%
+# Evaluation
+print("Classification Report:\n", classification_report(y_test, y_pred))
+print("Confusion Matrix:\n", confusion_matrix(y_test, y_pred))
+print("ROC AUC Score:", roc_auc_score(y_test, y_pred_proba))
+
+#%%
+# ROC Curve
+fpr, tpr, thresholds = roc_curve(y_test, y_pred_proba)
+plt.figure()
+plt.plot(fpr, tpr, label='Logistic Regression (area = %0.2f)' % roc_auc_score(y_test, y_pred_proba))
+plt.plot([0, 1], [0, 1],'r--')
+plt.xlim([0.0, 1.0])
+plt.ylim([0.0, 1.05])
+plt.xlabel('False Positive Rate')
+plt.ylabel('True Positive Rate')
+plt.title('Receiver operating characteristic')
+plt.legend(loc="lower right")
+plt.savefig('Log_ROC')
 plt.show()
 
 
+
+# %%
+import pandas as pd
+import numpy as np
+import statsmodels.api as sm
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import LabelEncoder, OneHotEncoder
+from sklearn.compose import ColumnTransformer
+
+# Load the dataset
+crime_data = pd.read_csv('Balanced_data.csv')
+
+# Convert 'SHOOTING' to binary encoding
+crime_data['SHOOTING'] = crime_data['SHOOTING'].map({'Y': 1, 'N': 0})
+
+# Define the features and target variable
+X = crime_data.drop(['INCIDENT_NUMBER', 'OCCURRED_ON_DATE', 'SHOOTING'], axis=1)
+y = crime_data['SHOOTING']
+
+# Handling categorical variables
+categorical_features = X.select_dtypes(include=['object']).columns.tolist()
+numerical_features = X.select_dtypes(exclude=['object']).columns.tolist()
+
+# Create a column transformer for preprocessing
+preprocessor = ColumnTransformer(
+    transformers=[
+        ('num', 'passthrough', numerical_features),
+        ('cat', OneHotEncoder(drop='first', sparse=False), categorical_features)  # set sparse=False
+    ], remainder='passthrough')  # add remainder parameter
+
+# Apply the column transformer to obtain a transformed feature matrix
+X_processed = preprocessor.fit_transform(X)
+
+# Get the feature names for the categorical variables after one-hot encoding
+cat_feature_names = preprocessor.named_transformers_['cat'].get_feature_names_out(categorical_features)
+
+# Combine with numerical feature names
+feature_names = numerical_features + cat_feature_names.tolist()
+
+# Convert the transformed feature matrix to a DataFrame
+X_processed_df = pd.DataFrame(X_processed, columns=feature_names)
+
+# Adding a constant for the intercept term
+X_processed_df = sm.add_constant(X_processed_df, has_constant='add')
+
+# Split the data into training and test sets
+X_train, X_test, y_train, y_test = train_test_split(X_processed_df, y, test_size=0.3, random_state=42)
+
+# Fit the logistic regression model using statsmodels
+logit_model = sm.Logit(y_train, X_train)
+result = logit_model.fit()
+
+# Print the summary report
+print(result.summary())
+
+# Predictions on the test set using the model
+y_pred = result.predict(X_test)
+y_pred_binary = (y_pred > 0.5).astype(int)  # Convert probabilities to binary output
+
 #%%
-crime_data = crime_data[['INCIDENT_NUMBER', 'OFFENSE_CODE', 'OFFENSE_CODE_GROUP', 'OFFENSE_DESCRIPTION', 'DISTRICT', 'REPORTING_AREA', 'SHOOTING', 'OCCURRED_ON_DATE', 'YEAR', 'MONTH', 'DAY_OF_WEEK', 'HOUR', 'UCR_PART', 'STREET']]
+# Evaluation metrics
+print("\nConfusion Matrix:")
+print(confusion_matrix(y_test, y_pred_binary))
+
+print("\nClassification Report:")
+print(classification_report(y_test, y_pred_binary))
+
+print("ROC AUC Score:")
+print(roc_auc_score(y_test, y_pred))
+
+#%%
+# Print the summary report
+summary = result.summary()
+print(summary)
+
+#%%
+# Print the logistic regression equation
+print("\nLogistic Regression Equation:")
+logit_eq = "log(odds) = "
+for i, param in enumerate(result.params):
+    logit_eq += f"({param:.4f})*{X_train.columns[i]} + "
+logit_eq = logit_eq.rstrip(' + ')
+print(logit_eq)
+
+#%%
+import pandas as pd
+import numpy as np
+import statsmodels.api as sm
+from sklearn.model_selection import train_test_split
+
+# Load the dataset
+crime_data = pd.read_csv('Balanced_data.csv')
+
+# Convert 'SHOOTING' to binary encoding
+crime_data['SHOOTING'] = crime_data['SHOOTING'].map({'Y': 1, 'N': 0})
+
+# Define the features and target variable
+X = crime_data.drop(['INCIDENT_NUMBER', 'OCCURRED_ON_DATE', 'SHOOTING'], axis=1)
+y = crime_data['SHOOTING']
+
+# Handling categorical variables with one-hot encoding
+X = pd.get_dummies(X, drop_first=True)
+
+# Ensure no object type columns are left
+assert not any(X.dtypes == 'object'), "There are still object type columns in the DataFrame."
+
+# Split the data into training and test sets
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
+
+# Add a constant for the intercept term
+X_train_sm = sm.add_constant(X_train)
+
+# Fit the logistic regression model using statsmodels
+logit_model = sm.Logit(y_train, X_train_sm)
+result = logit_model.fit()
+
+# Print the summary report
+print(result.summary())
 
 
+#%%
+# Print the summary report
+print(result.summary())
 
+# To get the odds ratio for each coefficient
+print("\nOdds Ratio:")
+print(np.exp(result.params))
 
-
-
-
-
-
-
-
-
-
-
-
-
-
+# %%
+print(crime_data.dtypes)
 # %%
