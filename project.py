@@ -653,11 +653,11 @@ import matplotlib.pyplot as plt
 crime_data = pd.read_csv('Balanced_data.csv')
 
 # Selecting features and target variable
-X = crime_data.drop(['INCIDENT_NUMBER', 'OCCURRED_ON_DATE', 'SHOOTING'], axis=1)
+X = crime_data.drop(['OFFENSE_CODE', 'INCIDENT_NUMBER', 'OCCURRED_ON_DATE', 'SHOOTING'], axis=1)
 y = crime_data['SHOOTING'].apply(lambda x: 1 if x == 'Y' else 0) 
 
 # Handling categorical variables
-categorical_features = ['OFFENSE_CODE', 'OFFENSE_CODE_GROUP', 'DISTRICT', 'YEAR', 'DAY_OF_WEEK', 'UCR_PART', 'STREET']
+categorical_features = ['OFFENSE_CODE_GROUP', 'DISTRICT', 'YEAR', 'DAY_OF_WEEK', 'UCR_PART', 'STREET']
 numerical_features = ['MONTH', 'HOUR']
 
 # Create a column transformer for preprocessing
@@ -669,7 +669,7 @@ preprocessor = ColumnTransformer(
 
 # Create a pipeline that combines the preprocessor with a logistic regression model
 pipeline = Pipeline(steps=[('preprocessor', preprocessor),
-                           ('classifier', LogisticRegression())])
+                           ('classifier', LogisticRegression(max_iter=1000))])
 
 # Split the data into training and test sets
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
@@ -702,135 +702,150 @@ plt.legend(loc="lower right")
 plt.savefig('Log_ROC')
 plt.show()
 
+# II) DECISION TREE (CLASSIFICATION TREE)
 
-
-# %%
+#%%
 import pandas as pd
-import numpy as np
-import statsmodels.api as sm
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import LabelEncoder, OneHotEncoder
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.metrics import classification_report, confusion_matrix, roc_auc_score, roc_curve
 from sklearn.compose import ColumnTransformer
+from sklearn.preprocessing import StandardScaler, OneHotEncoder
+import matplotlib.pyplot as plt
 
-# Load the dataset
+# Load the balanced dataset
 crime_data = pd.read_csv('Balanced_data.csv')
 
-# Convert 'SHOOTING' to binary encoding
-crime_data['SHOOTING'] = crime_data['SHOOTING'].map({'Y': 1, 'N': 0})
-
-# Define the features and target variable
+# Selecting features and target variable
 X = crime_data.drop(['INCIDENT_NUMBER', 'OCCURRED_ON_DATE', 'SHOOTING'], axis=1)
-y = crime_data['SHOOTING']
+y = crime_data['SHOOTING'].apply(lambda x: 1 if x == 'Y' else 0)
 
 # Handling categorical variables
-categorical_features = X.select_dtypes(include=['object']).columns.tolist()
-numerical_features = X.select_dtypes(exclude=['object']).columns.tolist()
+categorical_features = ['OFFENSE_CODE', 'OFFENSE_CODE_GROUP', 'DISTRICT', 'YEAR', 'DAY_OF_WEEK', 'UCR_PART', 'STREET']
+numerical_features = ['MONTH', 'HOUR']
 
 # Create a column transformer for preprocessing
 preprocessor = ColumnTransformer(
     transformers=[
-        ('num', 'passthrough', numerical_features),
-        ('cat', OneHotEncoder(drop='first', sparse=False), categorical_features)  # set sparse=False
-    ], remainder='passthrough')  # add remainder parameter
-
-# Apply the column transformer to obtain a transformed feature matrix
-X_processed = preprocessor.fit_transform(X)
-
-# Get the feature names for the categorical variables after one-hot encoding
-cat_feature_names = preprocessor.named_transformers_['cat'].get_feature_names_out(categorical_features)
-
-# Combine with numerical feature names
-feature_names = numerical_features + cat_feature_names.tolist()
-
-# Convert the transformed feature matrix to a DataFrame
-X_processed_df = pd.DataFrame(X_processed, columns=feature_names)
-
-# Adding a constant for the intercept term
-X_processed_df = sm.add_constant(X_processed_df, has_constant='add')
-
-# Split the data into training and test sets
-X_train, X_test, y_train, y_test = train_test_split(X_processed_df, y, test_size=0.3, random_state=42)
-
-# Fit the logistic regression model using statsmodels
-logit_model = sm.Logit(y_train, X_train)
-result = logit_model.fit()
-
-# Print the summary report
-print(result.summary())
-
-# Predictions on the test set using the model
-y_pred = result.predict(X_test)
-y_pred_binary = (y_pred > 0.5).astype(int)  # Convert probabilities to binary output
-
-#%%
-# Evaluation metrics
-print("\nConfusion Matrix:")
-print(confusion_matrix(y_test, y_pred_binary))
-
-print("\nClassification Report:")
-print(classification_report(y_test, y_pred_binary))
-
-print("ROC AUC Score:")
-print(roc_auc_score(y_test, y_pred))
-
-#%%
-# Print the summary report
-summary = result.summary()
-print(summary)
-
-#%%
-# Print the logistic regression equation
-print("\nLogistic Regression Equation:")
-logit_eq = "log(odds) = "
-for i, param in enumerate(result.params):
-    logit_eq += f"({param:.4f})*{X_train.columns[i]} + "
-logit_eq = logit_eq.rstrip(' + ')
-print(logit_eq)
-
-#%%
-import pandas as pd
-import numpy as np
-import statsmodels.api as sm
-from sklearn.model_selection import train_test_split
-
-# Load the dataset
-crime_data = pd.read_csv('Balanced_data.csv')
-
-# Convert 'SHOOTING' to binary encoding
-crime_data['SHOOTING'] = crime_data['SHOOTING'].map({'Y': 1, 'N': 0})
-
-# Define the features and target variable
-X = crime_data.drop(['INCIDENT_NUMBER', 'OCCURRED_ON_DATE', 'SHOOTING'], axis=1)
-y = crime_data['SHOOTING']
-
-# Handling categorical variables with one-hot encoding
-X = pd.get_dummies(X, drop_first=True)
-
-# Ensure no object type columns are left
-assert not any(X.dtypes == 'object'), "There are still object type columns in the DataFrame."
+        ('num', StandardScaler(), numerical_features),
+        ('cat', OneHotEncoder(handle_unknown='ignore'), categorical_features)  
+    ])
 
 # Split the data into training and test sets
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
 
-# Add a constant for the intercept term
-X_train_sm = sm.add_constant(X_train)
+# Apply preprocessing to the training and testing data
+X_train_processed = preprocessor.fit_transform(X_train)
+X_test_processed = preprocessor.transform(X_test)
 
-# Fit the logistic regression model using statsmodels
-logit_model = sm.Logit(y_train, X_train_sm)
-result = logit_model.fit()
+# Create and fit the decision tree classifier
+dt_classifier = DecisionTreeClassifier()
+dt_classifier.fit(X_train_processed, y_train)
 
-# Print the summary report
-print(result.summary())
-
+# Predictions
+y_pred_dt = dt_classifier.predict(X_test_processed)
+y_pred_proba_dt = dt_classifier.predict_proba(X_test_processed)[:, 1]
 
 #%%
-# Print the summary report
-print(result.summary())
+# Evaluation
+print("Decision Tree Classification Report:\n", classification_report(y_test, y_pred_dt))
+print("Decision Tree Confusion Matrix:\n", confusion_matrix(y_test, y_pred_dt))
+print("Decision Tree ROC AUC Score:", roc_auc_score(y_test, y_pred_proba_dt))
 
-# To get the odds ratio for each coefficient
-print("\nOdds Ratio:")
-print(np.exp(result.params))
+#%%
+# ROC Curve
+fpr_dt, tpr_dt, _ = roc_curve(y_test, y_pred_proba_dt)
+plt.figure()
+plt.plot(fpr_dt, tpr_dt, label='Decision Tree (area = %0.2f)' % roc_auc_score(y_test, y_pred_proba_dt))
+plt.plot([0, 1], [0, 1], 'r--')
+plt.xlim([0.0, 1.0])
+plt.ylim([0.0, 1.05])
+plt.xlabel('False Positive Rate')
+plt.ylabel('True Positive Rate')
+plt.title('Receiver Operating Characteristic')
+plt.legend(loc="lower right")
+plt.show()
 
 # %%
-print(crime_data.dtypes)
+import pandas as pd
+from sklearn.preprocessing import StandardScaler
+from sklearn.cluster import KMeans
+from sklearn.decomposition import PCA
+import matplotlib.pyplot as plt
+
+# Load data
+crime_data = pd.read_csv('Balanced_data.csv')
+
+# Select features for clustering
+features = ['OFFENSE_CODE', 'MONTH', 'HOUR']  # Example features
+X = crime_data[features]
+
+# Scale the features
+scaler = StandardScaler()
+X_scaled = scaler.fit_transform(X)
+
+# KMeans clustering
+k = 3  # Number of clusters
+kmeans = KMeans(n_clusters=k, init='k-means++', random_state=42)
+y_kmeans = kmeans.fit_predict(X_scaled)
+
+# Apply PCA and reduce to two dimensions for visualization
+pca = PCA(n_components=2)
+X_pca = pca.fit_transform(X_scaled)
+
+#%%
+# Plotting the clusters
+plt.figure(figsize=(8, 6))
+for i in range(k):
+    plt.scatter(X_pca[y_kmeans == i, 0], X_pca[y_kmeans == i, 1], 
+                label = f'Cluster {i}')
+plt.title('Clusters of Crimes')
+plt.xlabel('Principal Component 1')
+plt.ylabel('Principal Component 2')
+plt.legend()
+plt.show()
+
+# %%
+import pandas as pd
+from sklearn.cluster import KMeans
+import matplotlib.pyplot as plt
+
+# Load data
+crime_data = pd.read_csv('Balanced_data.csv')
+
+# Selecting features for clustering
+X = crime_data[['HOUR', 'MONTH']]
+
+# Calculate WCSS for different numbers of clusters
+wcss = []
+for i in range(1, 11):  # Testing 1 to 10 clusters
+    kmeans = KMeans(n_clusters=i, init='k-means++', n_init=10, random_state=42)
+    kmeans.fit(X)
+    wcss.append(kmeans.inertia_)
+
+#%%
+# Plot the WCSS to see the elbow
+plt.figure(figsize=(8, 6))
+plt.plot(range(1, 11), wcss)
+plt.title('Elbow Method')
+plt.xlabel('Number of clusters')
+plt.ylabel('WCSS')
+plt.show()
+
+# %%
+# KMeans clustering
+k = 5  
+kmeans = KMeans(n_clusters=k, init='k-means++', n_init=10, random_state=42)
+y_kmeans = kmeans.fit_predict(X)
+
+#%%
+# Plotting the clusters
+plt.figure(figsize=(8, 6))
+for i in range(k):
+    plt.scatter(X[y_kmeans == i]['HOUR'], X[y_kmeans == i]['MONTH'], label=f'Cluster {i}')
+plt.title('Clusters of Crimes by Hour and Month')
+plt.xlabel('Hour of Day')
+plt.ylabel('Month of Year')
+plt.legend()
+plt.show()
 # %%
