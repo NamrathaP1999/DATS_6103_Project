@@ -1072,6 +1072,14 @@ plt.xlabel('Number of clusters')
 plt.ylabel('WCSS')
 plt.show()
 
+# Plot the WCSS to find the elbow
+plt.figure(figsize=(8, 6))
+plt.plot(range(1, 11), wcss)
+plt.title('Elbow Method for Optimal k')
+plt.xlabel('Number of clusters')
+plt.ylabel('WCSS')
+plt.show()
+
 #%%
 # Choose the number of clusters (k) based on the Elbow Method
 k = 4  # for example
