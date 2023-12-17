@@ -3,22 +3,17 @@
 # This includes pandas for data manipulation, numpy for numerical operations,
 # matplotlib and seaborn for data visualization, and other essential libraries
 # required for data analysis and modeling tasks.
-from statistics import LinearRegression
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
-from sklearn.metrics import classification_report, mean_squared_error
-from sklearn.model_selection import train_test_split
-from sklearn.tree import DecisionTreeClassifier
-from sklearn.metrics import accuracy_score, confusion_matrix
 # Additional libraries will be imported as and when needed based on the specific requirements of the analysis
 
 #%%
 # Loading the crime dataset into a pandas DataFrame
 # The dataset is read from a CSV file named 'crime.csv'
 # The 'encoding' parameter is set to 'latin1' to handle special characters in the data that may not be properly interpreted using the default UTF-8 encoding
-crime_data = pd.read_csv("final_crime_data.csv", encoding='latin1')
+crime_data = pd.read_csv("crime_data.csv", encoding='latin1')
 
 #%% [markdown]
 # I) Data Cleaning and Data Preprocessing
@@ -46,8 +41,6 @@ crime_data.describe()
 # User-defined functions will be utilized in this process to streamline the data cleaning and
 # type conversion tasks, enhancing the dataset's readiness for subsequent analysis.
 
-
-#%%
 #%%
 # 1) Analyzing `INCIDENT_NUMBER` column
 # Verifying the Uniqueness of the 'INCIDENT_NUMBER' Column
@@ -122,7 +115,7 @@ num_missing_code = crime_data['OFFENSE_CODE'].isnull().sum()
 print("\nNumber of missing values in OFFENSE_CODE: ", num_missing_code)
 
 # The analysis shows there are no missing values in 'OFFENSE_CODE'
-# However, the data type of this column is currently 'object', which may not be optimal
+# However, the data type of this column is currently 'int64', which may not be optimal
 # Converting 'OFFENSE_CODE' to a 'categorical' data type can be beneficial because
 # categorical treatment allows for easy grouping and analysis of different crime types without implying any numerical relationship between them.
 
@@ -146,6 +139,7 @@ print(number_of_unique_code_group)
 num_missing_code_group = crime_data['OFFENSE_CODE_GROUP'].isnull().sum()
 print("\nNumber of missing values in OFFENSE_CODE: ", num_missing_code_group)
 
+#%%
 # It is observed that the 'OFFENSE_CODE_GROUP' column contains no missing values,
 # which is beneficial for a complete analysis. However, its current data type is 'object'.
 # For improved clarity and consistency in data handling, it would be advantageous to convert this column to 'string' type.
@@ -168,6 +162,7 @@ print(number_unique_description)
 num_missing_description = crime_data['OFFENSE_CODE_GROUP'].isnull().sum()
 print("\nNumber of missing values in OFFENSE_CODE: ", num_missing_description)
 
+#%%
 # It is observed that the 'OFFENSE_DESCRIPTION' column contains no missing values,
 # However, its current data type is 'object'.
 # For improved clarity and consistency in data handling, it would be advantageous to convert this column to 'string' type.
@@ -210,12 +205,15 @@ crime_data['DISTRICT'] = crime_data.apply(
 num_missing_districts = crime_data['DISTRICT'].isnull().sum()
 print("\nNumber of missing values in DISTRICT: ", num_missing_districts)
 
+#%%
 # It is observed that the 'DISTRICT' column contains no missing values now,
 # However, its current data type is 'object'.
 # For improved clarity and consistency in data handling, it would be advantageous to convert this column to 'string' type.
 # Convert 'DISTRICT' column to string data type
-#%%
 crime_data['DISTRICT'] = crime_data['DISTRICT'].astype('string')
+
+# Verify the conversion
+print(crime_data['DISTRICT'].dtype)
 
 #%%
 # Updating District Codes with Real-Time District Names
@@ -299,6 +297,7 @@ crime_data['SHOOTING'] = crime_data['SHOOTING'].astype('category')
 # Verify the conversion
 print(crime_data['SHOOTING'].unique())
 print(crime_data['SHOOTING'].dtype)
+print(crime_data['SHOOTING'].value_counts())
 
 #%% 
 # Next, check for any missing values in 'SHOOTING' column
@@ -348,7 +347,7 @@ print(crime_data['YEAR'].dtype)
 # Convert 'YEAR' column to a categorical data type
 crime_data['YEAR'] = crime_data['YEAR'].astype('category')
 
-# Optionally, to verify the conversion, you can check the data type again
+# Verify the conversion
 print(crime_data['YEAR'].dtype)
 
 # Status of the 'YEAR' Column
@@ -393,7 +392,7 @@ print(num_unique_day)
 crime_data['DAY_OF_WEEK'].info()
 crime_data['DAY_OF_WEEK'].describe()
 
-# %%
+#%%
 # Next, check for any missing values in 'DAY_OF_WEEK' column
 num_missing_day = crime_data['DAY_OF_WEEK'].isnull().sum()
 print("\nNumber of missing values in DAY_OF_WEEK: ", num_missing_day)
@@ -405,6 +404,7 @@ print("\nNumber of missing values in DAY_OF_WEEK: ", num_missing_day)
 # It clearly defines the column as containing a limited and fixed set of values (the days of the week),
 # which is semantically more appropriate for a categorical variable.
 # This conversion is expected to facilitate more efficient and effective data analysis involving days of the week.
+
 #%%
 crime_data['DAY_OF_WEEK'] = crime_data['DAY_OF_WEEK'].astype('category')
 
@@ -412,8 +412,8 @@ crime_data['DAY_OF_WEEK'] = crime_data['DAY_OF_WEEK'].astype('category')
 print(crime_data['DAY_OF_WEEK'].dtype)
 
 # Status of the 'DAY_OF_WEEK' Column
-# The 'MONTH' column in the dataset is complete with no missing values.
-# Additionally, the current data type of the 'MONTH' column is appropriate for the type of data it represents,
+# The 'DAY_OF_WEEK' column in the dataset is complete with no missing values.
+# Additionally, the current data type of the 'DAY_OF_WEEK' column is appropriate for the type of data it represents,
 
 # %%
 # 12) Analyzing `HOUR` Column
@@ -523,12 +523,10 @@ print(num_unique_UCR_PART)
 num_missing_UCR_PART = crime_data['UCR_PART'].isnull().sum()
 print("\nNumber of missing values in UCR_PART: ", num_missing_UCR_PART)
 
-
 # %%
 # Converting 'UCR_PART' Column to Categorical Type
 # because it simplifies operations like sorting, grouping, and filtering, based on UCR_PART, making them faster and more intuitive.
 # Change the data type 
-#%%
 crime_data['UCR_PART'] = crime_data['UCR_PART'].astype('category')
 
 #%%
@@ -584,193 +582,866 @@ print("\nNumber of missing values in STREET: ", num_missing_STREET)
 # There are no missing values present in the 'STREET' column of the dataset.
 # Additionally, the data type of the 'STREET' column is appropriately set as a string, which is ideal for textual street name data.
 
+#%%
+# Export the dataframe to a CSV file
+crime_data.to_csv('final_crime_data.csv', index = False)
+
 
 # II) Exploratory Data Analysis 
 
-
-
-
+#%%[markdown]
+## EDA
+#%%
+# required for data analysis and modeling tasks.
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+import plotly.express as px
+from sklearn.preprocessing import LabelEncoder 
+from scipy.stats import chi2_contingency
+from plotly.subplots import make_subplots
 
 #%%
-#SMART QUESTIONS 
-# 1
-# Can we identify patterns or trends in the nature of 
-# crime over the years?
+crime_df = pd.read_csv("final_crime_data.csv", encoding='latin1')
+#%%
+crime_df.shape
+# crime_df.columns
 
-top_categories = crime_data['OFFENSE_CODE_GROUP'].value_counts().nlargest(5).index
+#%%
+crime_df['OCCURRED_ON_DATE'] = pd.to_datetime(crime_df['OCCURRED_ON_DATE'])
+crime_df['DATE'] = crime_df['OCCURRED_ON_DATE'].dt.day
+#%%
+# Dropping unwanted rows
+crime_df.drop(['INCIDENT_NUMBER','OFFENSE_DESCRIPTION','OCCURRED_ON_DATE','OFFENSE_CODE','Location'], axis=1, inplace = True)
 
-filtered_data = crime_data[crime_data['OFFENSE_CODE_GROUP'].isin(top_categories)]
+#%%
+crime_df.head()
+#%%
+crime_df.describe().T
 
-sns.histplot(data=filtered_data, x="OFFENSE_CODE_GROUP", y="YEAR", hue="OFFENSE_CODE_GROUP", bins='auto').set(title='Histogram of Crime over the Years')
+# %%[markdown]
+#UNIVARIATE ANALYSIS
+#%%
+#Count plot for YEAR
+sns.countplot(x = crime_df['YEAR'], color = '#FAB4C6')
+plt.title('Distribution of Incidents by Year')
+plt.xticks(rotation=90)
+plt.show()
+
+#%%[markdown]
+# The incidents were highest in the year 2017 and lowest in the year 2015
+#%%
+#Count plot for MONTH
+sns.countplot(x = crime_df['MONTH'], color = '#C8E4C5')
+plt.title('Distribution of Incidents by Month')
+plt.xticks(rotation=90)
+plt.show()
+
+#%%[markdown]
+# The incidents were highest in the month of July and August
+#%%
+#Count plot for HOUR
+sns.countplot(x = crime_df['HOUR'], color = '#FFB347')
+plt.title('Distribution of Incidents by Hour')
+plt.xticks(rotation=90)
+plt.show()
+
+#%%[markdown]
+# The Incidents recorded are higher between 9th hour to 19th hour and lower during the early morning
+#%%
+#Count plot for DATE
+sns.countplot(x = crime_df['DATE'], color = '#E6E200')
+plt.title('Distribution of Incidents by Day')
+plt.xticks(rotation=90)
+plt.show()
+#%%[markdown]
+# The Incidents recorded are more during the beginning and the mid of the month. 31st of the month recored the lowest among all days. 
+#%%
+#Count plot for DAY_OF_WEEK
+days_order = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+
+sns.countplot(x = crime_df['DAY_OF_WEEK'], order = days_order, color = '#769FB6')
+
+plt.title('Distribution of Incidents by Day of the Week')
 plt.xticks(rotation=45)
+plt.show()
+#%%[markdown]
+# It can be observed that the Incident rate is almost equal on all the days except the highest being on Friday and lowest on Sunday. 
 
+#%%
+sns.countplot(x = crime_df['DISTRICT'], color = '#CDB5CD')
+plt.title('Distribution of Incidents by District')
+plt.xticks(rotation=90)
+plt.show()
+
+#%%[markdown]
+# While Roxbury marked the highest number, Brighton marked the lowest number of incidents
+
+#%%[markdown]
+# Description for DISTRICT
+#%%[markdown]
+# Analysis for SHOOTING variable
+#%%[markdown]
+# 1) Countplot for shooting
+sns.countplot(x=crime_df['SHOOTING'])
+
+#%%[markdown]
+# 2)Pie Chart
+crime_df['SHOOTING'].value_counts().plot.pie(autopct = '%1.1f%%')
+plt.title('Distribution of Shooting')
+#%%[markdown]
+# 3) Distribution for the occurance of Shooting over the Years
+sns.countplot(x = crime_df['YEAR'], hue = crime_df['SHOOTING'])
+plt.title('Distribution of Shooting')
+
+#%%[markdown]
+# 4) Distribution of Shooting District wise
+crime_df[crime_df['SHOOTING'] == 'Y']['DISTRICT'].value_counts().plot(kind = 'bar', color = '#8CD9A3')
+plt.title('Distribution of Shooting occuring in the district')
+#%%
+crime_df[crime_df['SHOOTING'] == 'N']['DISTRICT'].value_counts().plot(kind = 'bar', color = '#FF5C5C')
+plt.title('Distribution of Shooting not occuring in the district')
+
+
+#%%[markdown]
+# Distribution of different offence District wise
+order = crime_df['OFFENSE_CODE_GROUP'].value_counts().head(6)
+order = order.drop('Other').index
+sns.countplot(data = crime_df, x='OFFENSE_CODE_GROUP',hue='DISTRICT', order = order, palette = 'plasma')
+plt.legend(bbox_to_anchor=(1.05, 1), loc=2)
+plt.title('Distribution of different offence District wise')
+plt.xticks(rotation=75)
+plt.show()
+
+#%%[markdown]
+#Line Graph for each district showing the number of incidents distributed over the years
+#plotly
+#Line graph(District, Year, Offense code group)
+
+grouped = crime_df.groupby(['YEAR', 'DISTRICT'])['OFFENSE_CODE_GROUP'].count().reset_index()
+fig = px.line(grouped, x='YEAR', y='OFFENSE_CODE_GROUP', color='DISTRICT', labels={'OFFENSE_CODE_GROUP': 'Number of Incidents', 'YEAR': 'YEAR'})
+
+# Update layout for legend
+fig.update_layout(
+    title={
+        'y':0.9,
+        'x':0.5,
+        'xanchor': 'center',
+        'yanchor': 'top'
+    }
+)
+
+# Update layout for legend
+fig.update_layout(legend=dict(
+    title="District",
+    orientation="h",
+    yanchor="bottom",
+    y=1.02,
+    xanchor="right",
+    x=1
+))
+
+fig.show()
+
+#%%[markdown]
+# * All districts experienced an increase in incident numbers from 2015 to 2016, where most districts appear to reach a peak in 2017 specifically Dorchester, Roxbury, and South End noted the highest peak.
+# * Charlestown consistently shows the lowest number of incidents over the four-year , indicating it has fewer incidents compared to the other districts.
+#%%[markdown]
+#Line Graph for each district showing the number of incidents distributed over the months
+#Line graph(District, Month, Offense code group)
+
+grouped = crime_df.groupby(['MONTH', 'DISTRICT'])['OFFENSE_CODE_GROUP'].count().reset_index()
+fig = px.line(grouped, x='MONTH', y='OFFENSE_CODE_GROUP', color='DISTRICT', labels={'OFFENSE_CODE_GROUP': 'Number of Incidents', 'MONTH': 'Month'})
+
+# Update layout for legend
+fig.update_layout(
+    title={
+        'y':0.9,
+        'x':0.5,
+        'xanchor': 'center',
+        'yanchor': 'top'
+    }
+)
+
+# Update layout for legend
+fig.update_layout(legend=dict(
+    title="District",
+    orientation="h",
+    yanchor="bottom",
+    y=1.02,
+    xanchor="right",
+    x=1
+))
+
+fig.show()
+
+#%%[markdown]
+
+# * There is a trend showing that incidents tend to increase during the middle of the year, particularly in the summer months suggesting  a seasonal pattern where crime rates or incidents are higher during the summer.
+# * And we can also see that each district kind off follow the same pattern
+# * There is also a decline in incidents as the year progresses towards its end. This could be related to colder weather, fewer outdoor activities, or increased holiday season vigilance.
+#%%
+#Pie chart for all the Offence Code Group
+labels = crime_df['OFFENSE_CODE_GROUP'].astype('category').cat.categories.tolist()
+counts = crime_df['OFFENSE_CODE_GROUP'].value_counts()
+sizes = [counts[var_cat] for var_cat in labels]
+fig1, ax1 = plt.subplots(figsize = (22,12))
+ax1.pie(sizes, labels=labels, autopct='%1.1f%%', startangle=140) 
+ax1.axis('equal')
+plt.title('Pie chart for all the Offence Code Group')
+plt.show()
+
+# %%[markdown]
+# Bivariate Analysis
+
+# %%
+numerical_columns = crime_df.select_dtypes(include=['int64']).columns
+len(numerical_columns)
+#%%
+# Determine the number of rows/columns for the subplot grid
+n_cols = 3  
+n_rows = (len(numerical_columns) + n_cols - 1) // n_cols
+
+# Create a figure and a grid of subplots
+fig, axes = plt.subplots(n_rows, n_cols, figsize=(n_cols*5, n_rows*5))
+
+# Flatten the axes array for easy iteration
+axes = axes.flatten()
+
+for i, col in enumerate(numerical_columns):
+    sns.boxplot(x='SHOOTING', y=col, data=crime_df, ax=axes[i], color = '#d53e4f')
+    axes[i].set_title(col)
+    axes[i].set_xlabel('SHOOTING')
+    axes[i].set_ylabel('')
+
+
+plt.tight_layout()
+plt.show()
+#%%[markdown]
+# * For year The median for both shooting and non-shooting incidents appears to be around 2017, which suggests that the data is centered around recent years.
+# * For month The median shooting incidents is slightly higher than that for non-shooting incidents, suggesting that shootings may occur more frequently in the latter half of the year.
+# * For hour median and interquartile range is much higher , which implies that shootings tend to happen later in the day and are more spread out over the day than non-shooting incidents.
+
+#%%
+#Chi-squared Test
+categorical_columns = crime_df.select_dtypes(include=['object', 'category']).columns
+
+for col in categorical_columns:
+    # Create a cross-tabulation
+    contingency_table = pd.crosstab(crime_df[col], crime_df['SHOOTING'])
+    # Perform the Chi-squared test
+    chi2, p, dof, ex = chi2_contingency(contingency_table)
+    print(f"Chi-squared test for {col}: p-value = {p}")
+#%%
+# Selecting categorical columns
+categorical_columns = crime_df.select_dtypes(include=['object', 'category']).columns
+# len(categorical_columns)
+#%%
+# Create a figure and a grid of subplots
+fig, axes = plt.subplots(7, 1, figsize=(25,20))
+
+# Flatten the axes array for easy iteration
+axes = axes.flatten()
+
+for index,col in enumerate(categorical_columns):
+    sns.countplot(x=col, hue='SHOOTING', data=crime_df, ax=axes[index], palette='Set2')
+
+plt.tight_layout()
+plt.show()
+# %%[markdown]
+# Observation for bivariate analysis
+
+#%%
+# Assuming Shooting is a Yes/No variable, we convert it to 1/0
+crime_df['SHOOTING'] = crime_df['SHOOTING'].map({'Y': 1, 'N': 0})
+
+# %%[markdown]
+# Correlation Matrix
+correlations = crime_df[['YEAR','MONTH','HOUR','DATE','SHOOTING','Lat','Long']].corr()
+correlations
+#%%
+shooting_correlations = correlations['SHOOTING'].sort_values()
+print(shooting_correlations)
+#%%[markdown]
+# Heatmap for the correlation matrix
+sns.heatmap(correlations,annot = True)
+
+#%%
+# Scatterplot using plotly
+correlations = crime_df[['YEAR','MONTH','HOUR','DATE','SHOOTING','Lat','Long']].corr()
+
+# Create the heatmap
+fig = px.imshow(correlations, text_auto=True, aspect="auto", title='Correlation Heatmap')
+fig.show()
+#%%[markdown]
+# Multivariate Analysis
+#%%[markdown]
+# Scatterplot for Latitude and Longitude
+custom_colors = [ '#1f77b4',  '#ff7f0e',   '#2ca02c',   '#d62728',   '#9467bd',   '#8c564b',  '#e377c2',   '#7f7f7f',   '#bcbd22',   '#17becf',   '#aec7e8',  '#ffbb78']
+sns.scatterplot(data=crime_df, x='Long', y='Lat', hue='DISTRICT', alpha=0.5, palette = custom_colors)
+plt.legend(bbox_to_anchor=(1.05, 1), loc=2)
+plt.title('Scatter-plot for Latitude and Longitude')
+plt.xlim(-71.200,-71.000)
+plt.ylim(42.200,42.400)
+
+#%%[markdown]
+# Scatterplot to show the crime distribution across the Boston map
+#%%[markdown]
+# Distribution of crimes over the Boston map
+#%%
+# For time series analysis 
+#%%
+crime_df = pd.read_csv("cleaned_data.csv", encoding='latin1')
+crime_df.shape
+crime_df.columns
+
+# Run this cell before droping few columns
+#%%[markdown]
+#Time series analysis
+
+# Convert 'OCCURRED_ON_DATE' to datetime and sort
+crime_df['OCCURRED_ON_DATE'] = pd.to_datetime(crime_df['OCCURRED_ON_DATE'])
+crime_df.sort_values('OCCURRED_ON_DATE', inplace=True)
+
+# Group by 'OCCURRED_ON_DATE' and 'SHOOTING', then count the incidents
+grouped_df = crime_df.groupby([pd.Grouper(key='OCCURRED_ON_DATE', freq='M'), 'SHOOTING']).size().reset_index(name='NUM_INCIDENTS')
+
+# Create the line plot
+fig = px.line(grouped_df, x='OCCURRED_ON_DATE', y='NUM_INCIDENTS', color='SHOOTING', title='Trend of Incidents Over Time by Shooting')
+fig.show()
+
+# III) Predictive Analysis and Modeling 
+
+#%%
+# Final dataset
+# Considering the interested columns.
+crime_data = crime_data[['INCIDENT_NUMBER', 'OFFENSE_CODE', 'OFFENSE_CODE_GROUP', 'OFFENSE_DESCRIPTION', 'DISTRICT', 'REPORTING_AREA', 'SHOOTING', 'OCCURRED_ON_DATE', 'YEAR', 'MONTH', 'DAY_OF_WEEK', 'HOUR', 'UCR_PART', 'STREET']]
+
+#%%
+# In addressing the challenge posed by our imbalanced dataset, particularly for predicting shooting incidents, 
+# we adopted a nuanced approach that focused on creating a more balanced dataset through stratified sampling based on the 'DISTRICT' variable. 
+# The initial state of our dataset showed a significant imbalance, with a much higher number of non-shooting incidents (class 'N') compared to shooting incidents (class 'Y'). 
+# This disparity presented a considerable challenge in accurately predicting the relatively rare, yet critical, shooting incidents.
+
+# To counteract this, we employed a proportional subsetting strategy. While we retained all instances of reported shooting incidents (class 'Y'), 
+# we carefully crafted a subset of non-reported shooting incidents (class 'N'). The key to this approach was to ensure that this subset was representative of the entire dataset in terms of the distribution across different districts.
+# By focusing on 'DISTRICT', we aimed to preserve the underlying structure and distribution of the original data within our sample.
+
+# This method of stratified sampling based on 'DISTRICT' allowed us to maintain a balanced representation of the dataset. 
+# It was crucial to select 'DISTRICT' as the stratifying variable because of its potential impact on the occurrence and reporting of shooting incidents. 
+# By doing so, our subset did not merely represent a random selection but was a deliberate representation of the geographical distribution of incidents.
+
+# The impact of this method was evident in the improved performance of our predictive model. 
+# There was a marked enhancement in the model's ability to predict shooting incidents, as reflected in the improved precision, recall, and F1-score for the minority class ('Y'). 
+# The model's improved performance was further substantiated by a high ROC AUC score, indicating a robust ability to differentiate between the two classes.
+
+# %%
+# Group by 'DISTRICT' and then sample from each group
+grouped = crime_data[crime_data['SHOOTING'] == 'N'].groupby('DISTRICT')
+sampled_non_reported = grouped.apply(lambda x: x.sample(min(len(x), int(10000 * len(x) / len(crime_data)))))
+sampled_non_reported = sampled_non_reported.reset_index(drop=True)
+
+reported_shootings = crime_data[crime_data['SHOOTING'] == 'Y']
+balanced_dataset = pd.concat([reported_shootings, sampled_non_reported], ignore_index=True)
+
+balanced_dataset = balanced_dataset.sample(frac=1, random_state=42).reset_index(drop=True)
+balanced_dataset.to_csv('Balanced_data.csv', index = False)
+
+# After implementing the stratified sampling technique to balance our dataset, particularly focusing on the 'DISTRICT' variable, the resultant dataset was saved as a CSV file. 
+# This step is crucial for ensuring consistency in our modeling process. The reason behind saving the stratified sample to a CSV file stems from the nature of our sampling method: 
+# each execution of the stratified sampling code can potentially yield a slightly different dataset due to the randomness inherent in the sampling process.
+# By saving the stratified dataset as a CSV, we establish a fixed dataset that can be reliably used for all subsequent modeling. 
+# This approach eliminates the variability that would arise from repeatedly running the stratified sampling process, which could lead to different subsets of data and, consequently, different modeling outcomes.
+# Using a fixed CSV file for modeling ensures that our results are reproducible and consistent, a key aspect in the validation of machine learning models.
+# The commented code related to the stratification process serves as a record of the methodology used to obtain the balanced dataset. 
+# However, for the actual modeling, the saved CSV file is used. This practice enhances the reliability of our model by providing a stable and consistent dataset for training and testing, 
+# thereby allowing for a more accurate assessment of the model's performance.
+
+
+# I) Logistic Regression to predict 'SHOOTING'
+
+# %%
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LogisticRegression
+from sklearn.preprocessing import StandardScaler, OneHotEncoder
+from sklearn.metrics import classification_report, confusion_matrix, roc_auc_score, roc_curve
+from sklearn.compose import ColumnTransformer
+from sklearn.pipeline import Pipeline
+import matplotlib.pyplot as plt
+
+# Load the balanced_dataset
+crime_data = pd.read_csv('Balanced_data.csv')
+
+# Selecting features and target variable
+X = crime_data.drop(['OFFENSE_CODE', 'INCIDENT_NUMBER', 'OCCURRED_ON_DATE', 'SHOOTING'], axis=1)
+y = crime_data['SHOOTING'].apply(lambda x: 1 if x == 'Y' else 0) 
+
+# Handling categorical variables
+categorical_features = ['OFFENSE_CODE_GROUP', 'DISTRICT', 'YEAR', 'DAY_OF_WEEK', 'UCR_PART', 'STREET']
+numerical_features = ['MONTH', 'HOUR']
+
+# Create a column transformer for preprocessing
+preprocessor = ColumnTransformer(
+    transformers=[
+        ('num', StandardScaler(), numerical_features),
+        ('cat', OneHotEncoder(handle_unknown='ignore'), categorical_features)  
+    ])
+
+# Create a pipeline that combines the preprocessor with a logistic regression model
+pipeline = Pipeline(steps=[('preprocessor', preprocessor),
+                           ('classifier', LogisticRegression(max_iter=1000))])
+
+# Split the data into training and test sets
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
+
+# Fit the model
+pipeline.fit(X_train, y_train)
+
+# Predictions
+y_pred = pipeline.predict(X_test)
+y_pred_proba = pipeline.predict_proba(X_test)[:, 1]
+
+#%%
+# Evaluation
+print("Classification Report:\n", classification_report(y_test, y_pred))
+print("Confusion Matrix:\n", confusion_matrix(y_test, y_pred))
+print("ROC AUC Score:", roc_auc_score(y_test, y_pred_proba))
+
+#%%
+# ROC Curve
+fpr, tpr, thresholds = roc_curve(y_test, y_pred_proba)
+plt.figure()
+plt.plot(fpr, tpr, label='Logistic Regression (area = %0.2f)' % roc_auc_score(y_test, y_pred_proba))
+plt.plot([0, 1], [0, 1],'r--')
+plt.xlim([0.0, 1.0])
+plt.ylim([0.0, 1.05])
+plt.xlabel('False Positive Rate')
+plt.ylabel('True Positive Rate')
+plt.title('Receiver operating characteristic')
+plt.legend(loc="lower right")
+plt.savefig('Log_ROC')
+plt.show()
+
+#%%
+# Evaluation
+print("Classification Report:\n", classification_report(y_test, y_pred))
+print("Confusion Matrix:\n", confusion_matrix(y_test, y_pred))
+print("ROC AUC Score:", roc_auc_score(y_test, y_pred_proba))
+
+#%%
+# ROC Curve
+fpr, tpr, thresholds = roc_curve(y_test, y_pred_proba)
+plt.figure()
+plt.plot(fpr, tpr, label='Logistic Regression (area = %0.2f)' % roc_auc_score(y_test, y_pred_proba))
+plt.plot([0, 1], [0, 1],'r--')
+plt.xlim([0.0, 1.0])
+plt.ylim([0.0, 1.05])
+plt.xlabel('False Positive Rate')
+plt.ylabel('True Positive Rate')
+plt.title('Receiver operating characteristic')
+plt.legend(loc="lower right")
+plt.savefig('Log_ROC')
+plt.show()
+
+# II) DECISION TREE (CLASSIFICATION TREE)
+
+#%%
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.metrics import classification_report, confusion_matrix, roc_auc_score, roc_curve
+from sklearn.compose import ColumnTransformer
+from sklearn.preprocessing import StandardScaler, OneHotEncoder
+import matplotlib.pyplot as plt
+
+# Load the balanced dataset
+crime_data = pd.read_csv('Balanced_data.csv')
+
+# Selecting features and target variable
+X = crime_data.drop(['INCIDENT_NUMBER', 'OCCURRED_ON_DATE', 'SHOOTING'], axis=1)
+y = crime_data['SHOOTING'].apply(lambda x: 1 if x == 'Y' else 0)
+
+# Handling categorical variables
+categorical_features = ['OFFENSE_CODE', 'OFFENSE_CODE_GROUP', 'DISTRICT', 'YEAR', 'DAY_OF_WEEK', 'UCR_PART', 'STREET']
+numerical_features = ['MONTH', 'HOUR']
+
+# Create a column transformer for preprocessing
+preprocessor = ColumnTransformer(
+    transformers=[
+        ('num', StandardScaler(), numerical_features),
+        ('cat', OneHotEncoder(handle_unknown='ignore'), categorical_features)  
+    ])
+
+# Split the data into training and test sets
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
+
+# Apply preprocessing to the training and testing data
+X_train_processed = preprocessor.fit_transform(X_train)
+X_test_processed = preprocessor.transform(X_test)
+
+# Create and fit the decision tree classifier
+dt_classifier = DecisionTreeClassifier()
+dt_classifier.fit(X_train_processed, y_train)
+
+# Predictions
+y_pred_dt = dt_classifier.predict(X_test_processed)
+y_pred_proba_dt = dt_classifier.predict_proba(X_test_processed)[:, 1]
+
+#%%
+# Evaluation
+print("Decision Tree Classification Report:\n", classification_report(y_test, y_pred_dt))
+print("Decision Tree Confusion Matrix:\n", confusion_matrix(y_test, y_pred_dt))
+print("Decision Tree ROC AUC Score:", roc_auc_score(y_test, y_pred_proba_dt))
+
+#%%
+# ROC Curve
+fpr_dt, tpr_dt, _ = roc_curve(y_test, y_pred_proba_dt)
+plt.figure()
+plt.plot(fpr_dt, tpr_dt, label='Decision Tree (area = %0.2f)' % roc_auc_score(y_test, y_pred_proba_dt))
+plt.plot([0, 1], [0, 1], 'r--')
+plt.xlim([0.0, 1.0])
+plt.ylim([0.0, 1.05])
+plt.xlabel('False Positive Rate')
+plt.ylabel('True Positive Rate')
+plt.title('Receiver Operating Characteristic')
+plt.legend(loc="lower right")
+plt.show()
+
+# III) KNN model
+
+# %%
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.preprocessing import StandardScaler, OneHotEncoder
+from sklearn.metrics import classification_report, confusion_matrix, roc_auc_score, roc_curve
+from sklearn.compose import ColumnTransformer
+from sklearn.pipeline import Pipeline
+from sklearn.model_selection import cross_val_score
+import matplotlib.pyplot as plt
+
+# Load the balanced_dataset
+crime_data = pd.read_csv('Balanced_data.csv')
+
+# Selecting features and target variable
+X = crime_data.drop(['OFFENSE_CODE', 'INCIDENT_NUMBER', 'OCCURRED_ON_DATE', 'SHOOTING'], axis=1)
+y = crime_data['SHOOTING'].apply(lambda x: 1 if x == 'Y' else 0)
+
+# Handling categorical variables
+categorical_features = ['OFFENSE_CODE_GROUP', 'DISTRICT', 'YEAR', 'DAY_OF_WEEK', 'UCR_PART', 'STREET']
+numerical_features = ['MONTH', 'HOUR']
+
+# Create a column transformer for preprocessing
+preprocessor = ColumnTransformer(
+    transformers=[
+        ('num', StandardScaler(), numerical_features),
+        ('cat', OneHotEncoder(handle_unknown='ignore'), categorical_features)
+    ]
+)
+
+# Create a pipeline that combines the preprocessor with a KNN classifier
+# Note: Do not set n_neighbors here since we will determine the best k later
+pipeline = Pipeline(steps=[('preprocessor', preprocessor),
+                           ('classifier', KNeighborsClassifier())])
+
+# Split the data into training and test sets
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
+
+# %%
+# List to hold the average CV scores
+cv_scores = []
+
+# List to hold the values of k
+k_values = list(range(1, 31))  # Testing k from 1 to 30
+
+# Perform 10-fold cross-validation with each value of k
+for k in k_values:
+    # Update the classifier's n_neighbors parameter
+    pipeline.set_params(classifier__n_neighbors=k)
+    scores = cross_val_score(pipeline, X_train, y_train, cv=10, scoring='f1')
+    cv_scores.append(scores.mean())
+
+# %%
+# Plot F1 score vs k
+plt.figure(figsize=(12, 6))
+plt.plot(k_values, cv_scores, marker='o')
+plt.xlabel('Value of k for KNN')
+plt.ylabel('Cross-Validated F1 Score')
+plt.title('KNN Cross-Validated F1 Score for Different k Values')
+plt.show()
+
+# %%
+# Select the best k
+best_k = k_values[cv_scores.index(max(cv_scores))]
+print(f'The best value of k is {best_k}')
+
+# %%
+# Update the pipeline with the best k found
+pipeline.set_params(classifier__n_neighbors=best_k)
+
+# Fit the model with the training set
+pipeline.fit(X_train, y_train)
+
+# Predictions
+y_pred_knn = pipeline.predict(X_test)
+y_pred_proba_knn = pipeline.predict_proba(X_test)[:, 1]
+
+# %%
+# Evaluation
+print("KNN Classification Report:\n", classification_report(y_test, y_pred_knn))
+print("KNN Confusion Matrix:\n", confusion_matrix(y_test, y_pred_knn))
+print("KNN ROC AUC Score:", roc_auc_score(y_test, y_pred_proba_knn))
+
+# %%
+# ROC Curve for KNN
+fpr_knn, tpr_knn, thresholds_knn = roc_curve(y_test, y_pred_proba_knn)
+plt.figure()
+plt.plot(fpr_knn, tpr_knn, label='KNN (area = %0.2f)' % roc_auc_score(y_test, y_pred_proba_knn))
+plt.plot([0, 1], [0, 1], 'r--')
+plt.xlim([0.0, 1.0])
+plt.ylim([0.0, 1.05])
+plt.xlabel('False Positive Rate')
+plt.ylabel('True Positive Rate')
+plt.title('Receiver Operating Characteristic for KNN')
+plt.legend(loc="lower right")
 plt.show()
 
 
-#crime over the years
-#sns.histplot(data=crime_data, x="OFFENSE_CODE_GROUP", y="YEAR", hue= "OFFENSE_CODE_GROUP", bins='auto').set(title='Histogram of Crime over the Years')
-#plt.xticks(rotation=45)
-
-
-#%%
-#This plot can be pretty good day of the week 
-#shows the days of the week the crime was higher 
-
-#day of the week most crime comitted 
-sns.histplot(crime_data, x="DAY_OF_WEEK").set(title='Histogram of Day of the week with the most crimes committed')
-plt.xticks(rotation=45)
-
-#%%
-#year break down of committed crimes
-sns.histplot(data = crime_data, x = "YEAR").set(title='Histogram of Year with the most crimes committed')
-plt.xticks(rotation=45)
-
-
-
-
+# IV) K means clustering
 # %%
+import pandas as pd
+from sklearn.preprocessing import StandardScaler
+from sklearn.cluster import KMeans
+from sklearn.decomposition import PCA
+import matplotlib.pyplot as plt
 
-#district where most crime was comitted 
-sns.histplot(data = crime_data, x = "DISTRICT").set(title='Histogram of District with the most crimes committed')
-plt.xticks(rotation=45)
+# Load data
+crime_data = pd.read_csv('Balanced_data.csv')
 
-
-
-# %%
-sns.histplot(filtered_data, x="OFFENSE_CODE_GROUP", y="YEAR")
-plt.xticks(rotation=45)
-
-# %%
-
-#sns.lineplot(x = "OFFENSE_CODE_GROUP", y = "YEAR", data=crime_data)
-
-#is there a way to do from 2015+ like flip the y axis 
-
-lp = sns.lineplot(x = "OFFENSE_CODE_GROUP", y = "YEAR", data=crime_data)
-lp.tick_params(axis='x', labelrotation=90)
-
-# %%
-
-sns.lineplot(data=crime_data, x="OFFENSE_CODE_GROUP", y="YEAR", orient="y")
-
-# %%
-# 2
-#Are there certain locations that have a higher or more 
-# violent crime rate compared to other areas of Boston?
-
-sns.histplot(data=filtered_data, x="OFFENSE_CODE_GROUP", y="DISTRICT").set(title='Histogram of crime in District vs the nature of crime')
-plt.xticks(rotation=45)
-
-
-# %%
-# 3
-# Can we identify relationships between the type of offense, 
-# their specific district locations, and the
-# time variables (day of the week, hour) within the dataset?
-sns.histplot(data=filtered_data, x="OFFENSE_CODE_GROUP", y="DISTRICT", hue = "HOUR").set(title='Histogram of offense type, district, and hour')
-plt.xticks(rotation=80)
-
-
-# %%
-sns.histplot(data=crime_data, x="OCCURRED_ON_DATE", y="DISTRICT" ).set(title='Histogram of offense type and district')
-
-# %%
-# 4
-# Based on the three years' data, can we forecast the crime 
-# rates for the upcoming years in Boston?
-
-features = ['YEAR', 'MONTH']  
+# Select features for clustering
+features = ['OFFENSE_CODE', 'MONTH', 'HOUR']  # Example features
 X = crime_data[features]
-y = crime_data['DAY_OF_WEEK']
 
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+# Scale the features
+scaler = StandardScaler()
+X_scaled = scaler.fit_transform(X)
 
-# linear regression 
-model = LinearRegression()
-model.fit(X_train, y_train)
+# KMeans clustering
+k = 3  # Number of clusters
+kmeans = KMeans(n_clusters=k, init='k-means++', random_state=42)
+y_kmeans = kmeans.fit_predict(X_scaled)
 
+# Apply PCA and reduce to two dimensions for visualization
+pca = PCA(n_components=2)
+X_pca = pca.fit_transform(X_scaled)
 
-y_pred = model.predict(X_test)
-
-mse = mean_squared_error(y_test, y_pred)
-print(f'Mean Squared Error: {mse}')
-
-# visulizations
-plt.scatter(y_test, y_pred)
-plt.xlabel('Actual Crime Rate')
-plt.ylabel('Predicted Crime Rate')
-plt.title('Crime Rate Prediction')
+#%%
+# Plotting the clusters
+plt.figure(figsize=(8, 6))
+for i in range(k):
+    plt.scatter(X_pca[y_kmeans == i, 0], X_pca[y_kmeans == i, 1], 
+                label = f'Cluster {i}')
+plt.title('Clusters of Crimes')
+plt.xlabel('Principal Component 1')
+plt.ylabel('Principal Component 2')
+plt.legend()
 plt.show()
 
 # %%
-# classification mod utilizing district 
+from sklearn.preprocessing import LabelEncoder
+from sklearn.cluster import KMeans
+import matplotlib.pyplot as plt
 
-X = crime_data['DAY_OF_WEEK']
-y = crime_data['DISTRICT']
+# Load data
+crime_data = pd.read_csv('final_crime_data.csv')
 
+# Encode the categorical data
+le_offense = LabelEncoder()
+le_district = LabelEncoder()
 
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+crime_data['OFFENSE_CODE_GROUP'] = le_offense.fit_transform(crime_data['OFFENSE_CODE_GROUP'])
+crime_data['DISTRICT'] = le_district.fit_transform(crime_data['DISTRICT'])
 
+# Now select your features for clustering
+X = crime_data[['OFFENSE_CODE_GROUP', 'DISTRICT']]
 
-model = DecisionTreeClassifier(random_state=42)
-model.fit(X_train, y_train)
+# Perform KMeans clustering (now X is all numeric)
+wcss = []
+for i in range(1, 11):
+    kmeans = KMeans(n_clusters=i, init='k-means++', n_init=10, random_state=42)
+    kmeans.fit(X)
+    wcss.append(kmeans.inertia_)
 
-
-y_pred = model.predict(X_test)
-
-
-accuracy = accuracy_score(y_test, y_pred)
-conf_matrix = confusion_matrix(y_test, y_pred)
-
-print(f'Accuracy: {accuracy}')
-print('Confusion Matrix:')
-print(conf_matrix)
-
-
-plt.figure(figsize=(10, 8))
-sns.heatmap(conf_matrix, annot=True, fmt='d', cmap='Blues', xticklabels=model.classes_, yticklabels=model.classes_)
-plt.xlabel('Predicted')
-plt.ylabel('Actual')
-plt.title('Confusion Matrix')
+#%%
+# Plot the WCSS to find the elbow
+plt.plot(range(1, 11), wcss)
+plt.title('Elbow Method')
+plt.xlabel('Number of clusters')
+plt.ylabel('WCSS')
 plt.show()
 
 # %%
-#
+# Choose the number of clusters you decided upon (say 3 from the elbow method)
+k = 3 
+kmeans = KMeans(n_clusters=k, init='k-means++', n_init=10, random_state=42)
+y_kmeans = kmeans.fit_predict(X)
 
-features = ['YEAR', 'MONTH', 'DAY_OF_WEEK', 'HOUR', 'Lat', 'Long']  
-X = crime_data[features]
-y = crime_data['DISTRICT']  
+#%%
+# Plotting the clusters
+plt.figure(figsize=(8, 6))
+for i in range(k):
+    plt.scatter(X[y_kmeans == i]['OFFENSE_CODE_GROUP'], X[y_kmeans == i]['DISTRICT'], label=f'Cluster {i}')
+plt.title('Clusters of Crimes by Offense Code Group and District')
+plt.xlabel('Encoded Offense Code Group')
+plt.ylabel('Encoded District')
+plt.legend()
+plt.show()
+
+# %%
+import pandas as pd
+from sklearn.cluster import KMeans
+from sklearn.preprocessing import StandardScaler
+import matplotlib.pyplot as plt
+
+# Load data
+crime_data = pd.read_csv('final_crime_data.csv')
+
+# Map 'DAY_OF_WEEK' to numerical values
+days = {'Monday': 1, 'Tuesday': 2, 'Wednesday': 3, 'Thursday': 4, 'Friday': 5, 'Saturday': 6, 'Sunday': 7}
+crime_data['DAY_OF_WEEK'] = crime_data['DAY_OF_WEEK'].map(days)
+
+# Extract the relevant features for clustering
+X = crime_data[['DAY_OF_WEEK', 'HOUR']]
+
+# Scale 'HOUR' feature
+scaler = StandardScaler()
+X['HOUR'] = scaler.fit_transform(X[['HOUR']])
+
+# Determine the number of clusters using the Elbow Method
+wcss = []
+for i in range(1, 11):  # Let's test for 1 to 10 clusters
+    kmeans = KMeans(n_clusters=i, init='k-means++', n_init=10, random_state=42)
+    kmeans.fit(X)
+    wcss.append(kmeans.inertia_)
+
+# Plot the WCSS to find the elbow
+plt.figure(figsize=(8, 6))
+plt.plot(range(1, 11), wcss)
+plt.title('Elbow Method for Optimal k')
+plt.xlabel('Number of clusters')
+plt.ylabel('WCSS')
+plt.show()
+
+#%%
+# Choose the number of clusters (k) based on the Elbow Method
+k = 4  # for example
+kmeans = KMeans(n_clusters=k, init='k-means++', random_state=42)
+y_kmeans = kmeans.fit_predict(X)
+
+# Plotting the clusters
+plt.figure(figsize=(8, 6))
+plt.scatter(X['HOUR'][y_kmeans == 0], X['DAY_OF_WEEK'][y_kmeans == 0], s=50, c='red', label='Cluster 1')
+plt.scatter(X['HOUR'][y_kmeans == 1], X['DAY_OF_WEEK'][y_kmeans == 1], s=50, c='blue', label='Cluster 2')
+plt.scatter(X['HOUR'][y_kmeans == 2], X['DAY_OF_WEEK'][y_kmeans == 2], s=50, c='green', label='Cluster 3')
+plt.title('Clusters of Crimes by Day of Week and Hour')
+plt.xlabel('Scaled Hour of Day')
+plt.ylabel('Day of Week')
+plt.xticks(ticks=range(1, 8), labels=list(days.keys()))  # Set x-ticks to day names
+plt.legend()
+plt.show()
 
 
-X = pd.get_dummies(X)
+# %%
+from sklearn.cluster import KMeans
+import matplotlib.pyplot as plt
 
+# Assuming crime_data is already read and DAY_OF_WEEK is encoded as numeric
+X = crime_data[['DAY_OF_WEEK', 'HOUR']]
 
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+# Apply KMeans
+kmeans = KMeans(n_clusters=3, random_state=42)  # Adjust the number of clusters as needed
+clusters = kmeans.fit_predict(X)
 
-
-model = DecisionTreeClassifier(random_state=42)
-model.fit(X_train, y_train)
-
-
-y_pred = model.predict(X_test)
-
-
-accuracy = accuracy_score(y_test, y_pred)
-classification_rep = classification_report(y_test, y_pred)
-conf_matrix = confusion_matrix(y_test, y_pred)
-
-print(f'Accuracy: {accuracy}')
-print('Classification Report:')
-print(classification_rep)
-print('Confusion Matrix:')
-print(conf_matrix)
-
-
+# Plotting the clusters
 plt.figure(figsize=(10, 8))
-sns.heatmap(conf_matrix, annot=True, fmt='d', cmap='Blues', xticklabels=model.classes_, yticklabels=model.classes_)
-plt.xlabel('Predicted')
-plt.ylabel('Actual')
-plt.title('Confusion Matrix')
+plt.scatter(X['HOUR'], X['DAY_OF_WEEK'], c=clusters, cmap='viridis', label='Clusters')
+plt.colorbar(ticks=[0, 1, 2], label='Cluster Label')  # Adjust number of ticks based on the number of clusters
+
+# Annotating the plot with day names and hour
+day_ticks = range(1, 8)  # 1 to 7 for Monday to Sunday
+hour_ticks = range(0, 24)  # 0 to 23 for each hour
+plt.xticks(hour_ticks, hour_ticks)  # Set x-ticks to hours
+plt.yticks(day_ticks, ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'])  # Set y-ticks to day names
+
+plt.title('Clusters of Crimes by Day of Week and Hour')
+plt.xlabel('Hour of Day')
+plt.ylabel('Day of Week')
+plt.show()
+
+# %%
+import pandas as pd
+from sklearn.cluster import KMeans
+from sklearn.preprocessing import LabelEncoder, MinMaxScaler
+import matplotlib.pyplot as plt
+
+# Load data
+crime_data = pd.read_csv('final_crime_data.csv')
+
+# Encode 'UCR_PART'
+ucr_encoder = LabelEncoder()
+crime_data['UCR_PART'] = ucr_encoder.fit_transform(crime_data['UCR_PART'])
+
+# Extract the relevant features for clustering
+X = crime_data[['UCR_PART', 'MONTH']]
+
+# Optional: Scale 'MONTH' feature if necessary
+# scaler = MinMaxScaler(feature_range=(1, 12))
+# X['MONTH'] = scaler.fit_transform(X[['MONTH']])
+
+# Determine the number of clusters using the Elbow Method
+wcss = []
+for i in range(1, 11):  # Let's test for 1 to 10 clusters
+    kmeans = KMeans(n_clusters=i, init='k-means++', n_init=10, random_state=42)
+    kmeans.fit(X)
+    wcss.append(kmeans.inertia_)
+
+# Plot the WCSS to find the elbow
+plt.figure(figsize=(8, 6))
+plt.plot(range(1, 11), wcss)
+plt.title('Elbow Method for Optimal k')
+plt.xlabel('Number of clusters')
+plt.ylabel('WCSS')
+plt.show()
+
+# Plot the WCSS to find the elbow
+plt.figure(figsize=(8, 6))
+plt.plot(range(1, 11), wcss)
+plt.title('Elbow Method for Optimal k')
+plt.xlabel('Number of clusters')
+plt.ylabel('WCSS')
+plt.show()
+
+#%%
+# Choose the number of clusters (k) based on the Elbow Method
+k = 4  # for example
+kmeans = KMeans(n_clusters=k, init='k-means++', random_state=42)
+y_kmeans = kmeans.fit_predict(X)
+
+# Plotting the clusters
+plt.figure(figsize=(8, 6))
+# Here, we use the original 'MONTH' and 'UCR_PART' for plotting to keep the original data scale
+plt.scatter(crime_data['MONTH'][y_kmeans == 0], crime_data['UCR_PART'][y_kmeans == 0], s=50, c='red', label='Cluster 1')
+plt.scatter(crime_data['MONTH'][y_kmeans == 1], crime_data['UCR_PART'][y_kmeans == 1], s=50, c='blue', label='Cluster 2')
+plt.scatter(crime_data['MONTH'][y_kmeans == 2], crime_data['UCR_PART'][y_kmeans == 2], s=50, c='green', label='Cluster 3')
+plt.scatter(crime_data['MONTH'][y_kmeans == 3], crime_data['UCR_PART'][y_kmeans == 3], s=50, c='purple', label='Cluster 4')
+plt.title('Clusters of Crimes by UCR Part and Month')
+plt.xlabel('Month')
+plt.ylabel('UCR Part')
+plt.xticks(ticks=range(1, 13), labels=range(1, 13))  # Set x-ticks to months
+plt.yticks(ticks=range(len(ucr_encoder.classes_)), labels=ucr_encoder.classes_)  # Set y-ticks to UCR parts
+plt.legend()
 plt.show()
 
 # %%
