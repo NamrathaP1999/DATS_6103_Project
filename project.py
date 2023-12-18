@@ -666,6 +666,7 @@ sns.countplot(x = crime_df['DAY_OF_WEEK'], order = days_order, color = '#769FB6'
 plt.title('Distribution of Incidents by Day of the Week')
 plt.xticks(rotation=45)
 plt.show()
+
 #%%[markdown]
 # It can be observed that the Incident rate is almost equal on all the days except the highest being on Friday and lowest on Sunday. 
 
@@ -874,6 +875,7 @@ correlations = crime_df[['YEAR','MONTH','HOUR','DATE','SHOOTING','Lat','Long']].
 # Create the heatmap
 fig = px.imshow(correlations, text_auto=True, aspect="auto", title='Correlation Heatmap')
 fig.show()
+
 #%%[markdown]
 # Multivariate Analysis
 #%%[markdown]
@@ -911,7 +913,113 @@ grouped_df = crime_df.groupby([pd.Grouper(key='OCCURRED_ON_DATE', freq='M'), 'SH
 fig = px.line(grouped_df, x='OCCURRED_ON_DATE', y='NUM_INCIDENTS', color='SHOOTING', title='Trend of Incidents Over Time by Shooting')
 fig.show()
 
-# III) Predictive Analysis and Modeling 
+# III) SMART QUESTIONS
+# I) 
+# Can we identify patterns or trends in the nature of crime over the years?
+crime_data = pd.read_csv("final_crime_data.csv", encoding='latin1')
+
+# Display the first few rows of the DataFrame to verify its structure
+print(crime_data.head())
+
+# Display column names
+print(crime_data.columns)
+
+import pandas as pd
+from statsmodels.tsa.seasonal import seasonal_decompose
+import matplotlib.pyplot as plt
+
+crime_data['OCCURRED_ON_DATE'] = pd.to_datetime(crime_data['OCCURRED_ON_DATE'])
+
+# Set 'OCCURRED_ON_DATE' as the index
+crime_data.set_index('OCCURRED_ON_DATE', inplace=True)
+
+# Resample data to daily frequency
+crime_data_resampled = crime_data.resample('D').size()  # Adjust the frequency as needed
+
+# Decompose time series data
+decomposition = seasonal_decompose(crime_data_resampled, model='additive', period=365)  # Assuming daily data with yearly seasonality
+trend = decomposition.trend
+seasonal = decomposition.seasonal
+residual = decomposition.resid
+
+# Plotting
+plt.figure(figsize=(12, 8))
+
+# Original Time Series
+plt.subplot(411)
+plt.plot(crime_data_resampled, label='Original')
+plt.legend(loc='upper left')
+
+# Trend Component
+plt.subplot(412)
+plt.plot(trend, label='Trend')
+plt.legend(loc='upper left')
+
+# Seasonal Component
+plt.subplot(413)
+plt.plot(seasonal, label='Seasonal')
+plt.legend(loc='upper left')
+
+# Residual Component
+plt.subplot(414)
+plt.plot(residual, label='Residual')
+plt.legend(loc='upper left')
+
+plt.tight_layout()
+plt.show()
+
+# II) 
+# Are there certain locations that have a higher or more violent crime rate compared to other areas of Boston?
+
+# Define a function to categorize crimes as "mild" or "brutal" based on their description
+def categorize_crime(description):
+    brutal_keywords = ['violence', 'assault', 'homicide', 'robbery', 'weapon', 'murder']
+    for keyword in brutal_keywords:
+        if keyword in description.lower():
+            return 'Brutal'
+    return 'Mild'
+
+# Create a new column 'Crime_Category' based on the description
+crime_data['Crime_Category'] = crime_data['OFFENSE_DESCRIPTION'].apply(categorize_crime)
+
+# Calculate the count of "Brutal" crimes in each district
+brutal_counts = crime_data[crime_data['Crime_Category'] == 'Brutal']['DISTRICT'].value_counts().reset_index()
+brutal_counts.columns = ['DISTRICT', 'Brutal_Crime_Count']
+
+# Create a DataFrame with the count of "Mild" crimes in each district
+mild_counts = crime_data[crime_data['Crime_Category'] == 'Mild']['DISTRICT'].value_counts().reset_index()
+mild_counts.columns = ['DISTRICT', 'Mild_Crime_Count']
+
+# Merge the "Brutal" and "Mild" counts based on the district
+merged_counts = pd.merge(brutal_counts, mild_counts, on='DISTRICT', how='outer').fillna(0)
+
+# Sort the districts based on the number of "Brutal" crimes
+merged_counts = merged_counts.sort_values(by='Brutal_Crime_Count', ascending=False)
+
+# Create a bar plot to visualize "Mild" and "Brutal" crime categories by district
+plt.figure(figsize=(12, 6))
+sns.barplot(data=merged_counts, x='DISTRICT', y='Brutal_Crime_Count', palette='viridis')
+sns.barplot(data=merged_counts, x='DISTRICT', y='Mild_Crime_Count', palette='Set2', alpha=0.7)
+plt.title('Districts by Number of Crimes')
+plt.xlabel('District')
+plt.ylabel('Number of Crimes')
+plt.xticks(rotation=45)
+
+# Add custom legend handles and labels
+legend_handles = [
+    plt.Line2D([0], [0], color='grey', lw=6, alpha=0.7),
+    plt.Line2D([0], [0], color='lightgrey', lw=6)
+]
+legend_labels = ['Brutal Crimes', 'Mild Crimes']
+plt.legend(handles=legend_handles, labels=legend_labels, title='Crime Category', loc='upper right')
+
+plt.show()
+
+# III) Based on the three years' data, can we forecast the incidents of shootings for the upcoming years in Boston? 
+# Addressing the challenge of forecasting shooting incidents in Boston with three years of data involved constructing three distinct models: Logistic Regression, Classification Tree, and K-Nearest Neighbors (KNN). 
+# Each model was selected for its unique strengths and suitability in navigating the complexities of crime data, effectively tailoring the analysis to the specific requirements of the project.
+
+# Predictive Analysis and Modeling 
 
 #%%
 # Final dataset
@@ -1208,240 +1316,23 @@ plt.title('Receiver Operating Characteristic for KNN')
 plt.legend(loc="lower right")
 plt.show()
 
+# Summary 
+#| Model                        | Precision (0) | Precision (1) | Recall (0)| Recall (1) | F1-score (0) | F1-score (1) | Accuracy |  AUC Score  |
+#|------------------------------|---------------|---------------|-----------|------------|--------------|--------------|----------|-------------|
+#| Logistic Regression          | 0.97          | 0.80          |  0.98     | 0.70       | 0.98         | 0.74         | 0.96     |  0.96       |
+#| Decision Tree                | 0.97          | 0.72          |  0.97     | 0.69       |0.97          | 0.70         | 0.95     |  0.83       |
+#| KNN model                    | 0.97          | 0.72          |  0.97     | 0.70       | 0.97         | 0.71         | 0.95     |  0.093      |
+#|------------------------------|---------------|---------------|-----------|------------|--------------|--------------|----------|-------------|
 
-# IV) K means clustering
-# %%
-import pandas as pd
-from sklearn.preprocessing import StandardScaler
-from sklearn.cluster import KMeans
-from sklearn.decomposition import PCA
-import matplotlib.pyplot as plt
+# Comparing the three models—Logistic Regression, Decision Tree, and K-Nearest Neighbors—highlights distinct performance metrics. 
+# Logistic Regression exhibits the highest F1-score for predicting shootings, indicating an effective balance between precision and recall. 
+# The accuracy is also slightly superior to the other models.
+# The Decision Tree shows comparable precision for non-shootings but a slight dip in predicting shootings. 
+# The F1-score for shootings is marginally lower, reflecting a less balanced prediction capability. 
+# K-Nearest Neighbors maintains consistent precision for non-shootings and demonstrates a slight improvement in the F1-score for shootings over the Decision Tree, 
+# indicating a better balance in precision and recall for the minority class.
+# Minimizing false negatives is critical in shooting incident prediction to avoid overlooking actual events with severe repercussions. 
+# Logistic Regression, with its higher F1-score for shootings and overall accuracy, emerges as the more suitable model for this scenario. 
+# It offers a reliable compromise between minimizing false negatives and maintaining precision, essential for informed law enforcement and ensuring public safety.
 
-# Load data
-crime_data = pd.read_csv('Balanced_data.csv')
-
-# Select features for clustering
-features = ['OFFENSE_CODE', 'MONTH', 'HOUR']  # Example features
-X = crime_data[features]
-
-# Scale the features
-scaler = StandardScaler()
-X_scaled = scaler.fit_transform(X)
-
-# KMeans clustering
-k = 3  # Number of clusters
-kmeans = KMeans(n_clusters=k, init='k-means++', random_state=42)
-y_kmeans = kmeans.fit_predict(X_scaled)
-
-# Apply PCA and reduce to two dimensions for visualization
-pca = PCA(n_components=2)
-X_pca = pca.fit_transform(X_scaled)
-
-#%%
-# Plotting the clusters
-plt.figure(figsize=(8, 6))
-for i in range(k):
-    plt.scatter(X_pca[y_kmeans == i, 0], X_pca[y_kmeans == i, 1], 
-                label = f'Cluster {i}')
-plt.title('Clusters of Crimes')
-plt.xlabel('Principal Component 1')
-plt.ylabel('Principal Component 2')
-plt.legend()
-plt.show()
-
-# %%
-from sklearn.preprocessing import LabelEncoder
-from sklearn.cluster import KMeans
-import matplotlib.pyplot as plt
-
-# Load data
-crime_data = pd.read_csv('final_crime_data.csv')
-
-# Encode the categorical data
-le_offense = LabelEncoder()
-le_district = LabelEncoder()
-
-crime_data['OFFENSE_CODE_GROUP'] = le_offense.fit_transform(crime_data['OFFENSE_CODE_GROUP'])
-crime_data['DISTRICT'] = le_district.fit_transform(crime_data['DISTRICT'])
-
-# Now select your features for clustering
-X = crime_data[['OFFENSE_CODE_GROUP', 'DISTRICT']]
-
-# Perform KMeans clustering (now X is all numeric)
-wcss = []
-for i in range(1, 11):
-    kmeans = KMeans(n_clusters=i, init='k-means++', n_init=10, random_state=42)
-    kmeans.fit(X)
-    wcss.append(kmeans.inertia_)
-
-#%%
-# Plot the WCSS to find the elbow
-plt.plot(range(1, 11), wcss)
-plt.title('Elbow Method')
-plt.xlabel('Number of clusters')
-plt.ylabel('WCSS')
-plt.show()
-
-# %%
-# Choose the number of clusters you decided upon (say 3 from the elbow method)
-k = 3 
-kmeans = KMeans(n_clusters=k, init='k-means++', n_init=10, random_state=42)
-y_kmeans = kmeans.fit_predict(X)
-
-#%%
-# Plotting the clusters
-plt.figure(figsize=(8, 6))
-for i in range(k):
-    plt.scatter(X[y_kmeans == i]['OFFENSE_CODE_GROUP'], X[y_kmeans == i]['DISTRICT'], label=f'Cluster {i}')
-plt.title('Clusters of Crimes by Offense Code Group and District')
-plt.xlabel('Encoded Offense Code Group')
-plt.ylabel('Encoded District')
-plt.legend()
-plt.show()
-
-# %%
-import pandas as pd
-from sklearn.cluster import KMeans
-from sklearn.preprocessing import StandardScaler
-import matplotlib.pyplot as plt
-
-# Load data
-crime_data = pd.read_csv('final_crime_data.csv')
-
-# Map 'DAY_OF_WEEK' to numerical values
-days = {'Monday': 1, 'Tuesday': 2, 'Wednesday': 3, 'Thursday': 4, 'Friday': 5, 'Saturday': 6, 'Sunday': 7}
-crime_data['DAY_OF_WEEK'] = crime_data['DAY_OF_WEEK'].map(days)
-
-# Extract the relevant features for clustering
-X = crime_data[['DAY_OF_WEEK', 'HOUR']]
-
-# Scale 'HOUR' feature
-scaler = StandardScaler()
-X['HOUR'] = scaler.fit_transform(X[['HOUR']])
-
-# Determine the number of clusters using the Elbow Method
-wcss = []
-for i in range(1, 11):  # Let's test for 1 to 10 clusters
-    kmeans = KMeans(n_clusters=i, init='k-means++', n_init=10, random_state=42)
-    kmeans.fit(X)
-    wcss.append(kmeans.inertia_)
-
-# Plot the WCSS to find the elbow
-plt.figure(figsize=(8, 6))
-plt.plot(range(1, 11), wcss)
-plt.title('Elbow Method for Optimal k')
-plt.xlabel('Number of clusters')
-plt.ylabel('WCSS')
-plt.show()
-
-#%%
-# Choose the number of clusters (k) based on the Elbow Method
-k = 4  # for example
-kmeans = KMeans(n_clusters=k, init='k-means++', random_state=42)
-y_kmeans = kmeans.fit_predict(X)
-
-# Plotting the clusters
-plt.figure(figsize=(8, 6))
-plt.scatter(X['HOUR'][y_kmeans == 0], X['DAY_OF_WEEK'][y_kmeans == 0], s=50, c='red', label='Cluster 1')
-plt.scatter(X['HOUR'][y_kmeans == 1], X['DAY_OF_WEEK'][y_kmeans == 1], s=50, c='blue', label='Cluster 2')
-plt.scatter(X['HOUR'][y_kmeans == 2], X['DAY_OF_WEEK'][y_kmeans == 2], s=50, c='green', label='Cluster 3')
-plt.title('Clusters of Crimes by Day of Week and Hour')
-plt.xlabel('Scaled Hour of Day')
-plt.ylabel('Day of Week')
-plt.xticks(ticks=range(1, 8), labels=list(days.keys()))  # Set x-ticks to day names
-plt.legend()
-plt.show()
-
-
-# %%
-from sklearn.cluster import KMeans
-import matplotlib.pyplot as plt
-
-# Assuming crime_data is already read and DAY_OF_WEEK is encoded as numeric
-X = crime_data[['DAY_OF_WEEK', 'HOUR']]
-
-# Apply KMeans
-kmeans = KMeans(n_clusters=3, random_state=42)  # Adjust the number of clusters as needed
-clusters = kmeans.fit_predict(X)
-
-# Plotting the clusters
-plt.figure(figsize=(10, 8))
-plt.scatter(X['HOUR'], X['DAY_OF_WEEK'], c=clusters, cmap='viridis', label='Clusters')
-plt.colorbar(ticks=[0, 1, 2], label='Cluster Label')  # Adjust number of ticks based on the number of clusters
-
-# Annotating the plot with day names and hour
-day_ticks = range(1, 8)  # 1 to 7 for Monday to Sunday
-hour_ticks = range(0, 24)  # 0 to 23 for each hour
-plt.xticks(hour_ticks, hour_ticks)  # Set x-ticks to hours
-plt.yticks(day_ticks, ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'])  # Set y-ticks to day names
-
-plt.title('Clusters of Crimes by Day of Week and Hour')
-plt.xlabel('Hour of Day')
-plt.ylabel('Day of Week')
-plt.show()
-
-# %%
-import pandas as pd
-from sklearn.cluster import KMeans
-from sklearn.preprocessing import LabelEncoder, MinMaxScaler
-import matplotlib.pyplot as plt
-
-# Load data
-crime_data = pd.read_csv('final_crime_data.csv')
-
-# Encode 'UCR_PART'
-ucr_encoder = LabelEncoder()
-crime_data['UCR_PART'] = ucr_encoder.fit_transform(crime_data['UCR_PART'])
-
-# Extract the relevant features for clustering
-X = crime_data[['UCR_PART', 'MONTH']]
-
-# Optional: Scale 'MONTH' feature if necessary
-# scaler = MinMaxScaler(feature_range=(1, 12))
-# X['MONTH'] = scaler.fit_transform(X[['MONTH']])
-
-# Determine the number of clusters using the Elbow Method
-wcss = []
-for i in range(1, 11):  # Let's test for 1 to 10 clusters
-    kmeans = KMeans(n_clusters=i, init='k-means++', n_init=10, random_state=42)
-    kmeans.fit(X)
-    wcss.append(kmeans.inertia_)
-
-# Plot the WCSS to find the elbow
-plt.figure(figsize=(8, 6))
-plt.plot(range(1, 11), wcss)
-plt.title('Elbow Method for Optimal k')
-plt.xlabel('Number of clusters')
-plt.ylabel('WCSS')
-plt.show()
-
-# Plot the WCSS to find the elbow
-plt.figure(figsize=(8, 6))
-plt.plot(range(1, 11), wcss)
-plt.title('Elbow Method for Optimal k')
-plt.xlabel('Number of clusters')
-plt.ylabel('WCSS')
-plt.show()
-
-#%%
-# Choose the number of clusters (k) based on the Elbow Method
-k = 4  # for example
-kmeans = KMeans(n_clusters=k, init='k-means++', random_state=42)
-y_kmeans = kmeans.fit_predict(X)
-
-# Plotting the clusters
-plt.figure(figsize=(8, 6))
-# Here, we use the original 'MONTH' and 'UCR_PART' for plotting to keep the original data scale
-plt.scatter(crime_data['MONTH'][y_kmeans == 0], crime_data['UCR_PART'][y_kmeans == 0], s=50, c='red', label='Cluster 1')
-plt.scatter(crime_data['MONTH'][y_kmeans == 1], crime_data['UCR_PART'][y_kmeans == 1], s=50, c='blue', label='Cluster 2')
-plt.scatter(crime_data['MONTH'][y_kmeans == 2], crime_data['UCR_PART'][y_kmeans == 2], s=50, c='green', label='Cluster 3')
-plt.scatter(crime_data['MONTH'][y_kmeans == 3], crime_data['UCR_PART'][y_kmeans == 3], s=50, c='purple', label='Cluster 4')
-plt.title('Clusters of Crimes by UCR Part and Month')
-plt.xlabel('Month')
-plt.ylabel('UCR Part')
-plt.xticks(ticks=range(1, 13), labels=range(1, 13))  # Set x-ticks to months
-plt.yticks(ticks=range(len(ucr_encoder.classes_)), labels=ucr_encoder.classes_)  # Set y-ticks to UCR parts
-plt.legend()
-plt.show()
-
-# %%
+################## End of Work ##################
